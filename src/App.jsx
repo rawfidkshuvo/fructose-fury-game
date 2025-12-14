@@ -41,6 +41,12 @@ import {
   Sparkles,
   Home,
   Trash2,
+  Nut,
+  Leaf,
+  Flower,
+  Sun,
+  Gem,
+  Megaphone,
 } from "lucide-react";
 
 // --- Firebase Config & Init ---
@@ -50,7 +56,7 @@ const firebaseConfig = {
   projectId: "game-hub-ff8aa",
   storageBucket: "game-hub-ff8aa.firebasestorage.app",
   messagingSenderId: "586559578902",
-  appId: "1:586559578902:web:c447da22d85544e16aa637",
+  appId: "1:586559578902:web:c447da22d85544e16aa637"
 };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -60,26 +66,21 @@ const APP_ID = typeof __app_id !== "undefined" ? __app_id : "fructose-fury";
 const GAME_ID = "20"; // Assigned ID for Fructose Fury
 
 // --- Game Constants ---
+// Updated to 10 Fruits with specific values and counts
 const FRUITS = {
-  BANANA: {
-    name: "Banana",
-    val: 4,
-    color: "text-yellow-400",
-    bg: "bg-yellow-900/50",
-    border: "border-yellow-500",
-    icon: Banana,
-  },
-  GRAPE: {
-    name: "Grape",
-    val: 3,
-    color: "text-purple-400",
-    bg: "bg-purple-900/50",
-    border: "border-purple-500",
-    icon: Grape,
+  CHERRY: {
+    name: "Strawberry",
+    val: 1,
+    count: 11,
+    color: "text-red-400",
+    bg: "bg-red-900/50",
+    border: "border-red-500",
+    icon: Cherry,
   },
   CITRUS: {
     name: "Tangerine",
     val: 2,
+    count: 11,
     color: "text-orange-400",
     bg: "bg-orange-900/50",
     border: "border-orange-500",
@@ -88,25 +89,82 @@ const FRUITS = {
   APPLE: {
     name: "Peach",
     val: 3,
+    count: 11,
     color: "text-pink-400",
     bg: "bg-pink-900/50",
     border: "border-pink-500",
     icon: Apple,
   },
-  CHERRY: {
-    name: "Strawberry",
-    val: 1,
-    color: "text-red-400",
-    bg: "bg-red-900/50",
-    border: "border-red-500",
-    icon: Cherry,
+  GRAPE: {
+    name: "Grape",
+    val: 4,
+    count: 11,
+    color: "text-purple-400",
+    bg: "bg-purple-900/50",
+    border: "border-purple-500",
+    icon: Grape,
+  },
+  BANANA: {
+    name: "Banana",
+    val: 5,
+    count: 11,
+    color: "text-yellow-400",
+    bg: "bg-yellow-900/50",
+    border: "border-yellow-500",
+    icon: Banana,
+  },
+  NUT: {
+    name: "Coconut",
+    val: 6,
+    count: 7,
+    color: "text-stone-400",
+    bg: "bg-stone-800/80",
+    border: "border-stone-500",
+    icon: Nut,
+  },
+  LEAF: {
+    name: "Pear",
+    val: 7,
+    count: 7,
+    color: "text-lime-400",
+    bg: "bg-lime-900/50",
+    border: "border-lime-500",
+    icon: Leaf,
+  },
+  FLOWER: {
+    name: "Dragonfruit",
+    val: 8,
+    count: 7,
+    color: "text-fuchsia-400",
+    bg: "bg-fuchsia-900/50",
+    border: "border-fuchsia-500",
+    icon: Flower,
+  },
+  SUN: {
+    name: "Melon",
+    val: 9,
+    count: 7,
+    color: "text-amber-300",
+    bg: "bg-amber-900/50",
+    border: "border-amber-500",
+    icon: Sun,
+  },
+  GEM: {
+    name: "Pineapple",
+    val: 10,
+    count: 7,
+    color: "text-cyan-300",
+    bg: "bg-cyan-900/50",
+    border: "border-cyan-500",
+    icon: Gem,
   },
 };
 
-// 90 Cards Total (18 of each)
+// Generate Deck based on specific counts
 const DECK_TEMPLATE = [];
 Object.keys(FRUITS).forEach((type) => {
-  for (let i = 0; i < 18; i++) {
+  const count = FRUITS[type].count;
+  for (let i = 0; i < count; i++) {
     DECK_TEMPLATE.push(type);
   }
 });
@@ -126,6 +184,11 @@ const shuffle = (array) => {
   return array;
 };
 
+const calculateScore = (cards) => {
+  if (!cards || !Array.isArray(cards)) return 0;
+  return cards.reduce((total, type) => total + (FRUITS[type]?.val || 0), 0);
+};
+
 // --- Visual Components ---
 
 const FloatingBackground = () => (
@@ -133,7 +196,8 @@ const FloatingBackground = () => (
     <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-900/20 via-gray-950 to-black" />
     <div className="absolute top-0 left-0 w-full h-full opacity-10">
       {[...Array(20)].map((_, i) => {
-        const Icon = Object.values(FRUITS)[i % 5].icon;
+        const fruitKeys = Object.keys(FRUITS);
+        const Icon = FRUITS[fruitKeys[i % fruitKeys.length]].icon;
         return (
           <div
             key={i}
@@ -195,72 +259,104 @@ const Card = ({ type, size = "md", animate = false }) => {
           {fruit.name}
         </span>
       )}
-      {size === "lg" && (
-        <span className="absolute bottom-2 right-2 text-white/50 text-xs font-mono">
-          {fruit.val}pts
-        </span>
-      )}
+      {/* ALWAYS show value now, even on small cards */}
+      <div className="absolute bottom-1 right-1 bg-black/50 px-1 rounded text-white/80 text-[10px] md:text-xs font-mono font-bold">
+        {fruit.val}
+      </div>
     </div>
   );
 };
 
-// --- Modal Components ---
+// --- Modal & Overlay Components ---
 
-const StealModal = ({ targetName, fruitType, onSteal, onPass }) => (
+// NEW: Event Overlay for better visibility
+const EventOverlay = ({ event }) => {
+  if (!event) return null;
+
+  let Icon = Info;
+  let colorClass = "text-white";
+  let bgClass = "bg-gray-800";
+
+  if (event.type === "BUST") {
+    Icon = Skull;
+    colorClass = "text-red-500";
+    bgClass = "bg-red-900/90";
+  } else if (event.type === "STEAL") {
+    Icon = Hand;
+    colorClass = "text-orange-500";
+    bgClass = "bg-orange-900/90";
+  } else if (event.type === "BANK") {
+    Icon = CheckCircle;
+    colorClass = "text-green-500";
+    bgClass = "bg-green-900/90";
+  }
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[200] flex items-center justify-center p-4">
+      <div
+        className={`p-6 md:p-8 rounded-3xl ${bgClass} border-4 border-white/20 shadow-2xl flex flex-col items-center animate-in zoom-in fade-in duration-300 transform scale-110 max-w-sm w-full text-center`}
+      >
+        <Icon size={48} className={`${colorClass} mb-4 animate-bounce`} />
+        <h2 className="text-2xl md:text-3xl font-black text-white uppercase drop-shadow-lg">
+          {event.title}
+        </h2>
+        <p className="text-lg md:text-xl text-white/90 font-bold mt-2">
+          {event.message}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const StealModal = ({ targets, fruitType, onSteal, onPass }) => (
   <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 animate-in fade-in">
-    <div className="bg-gray-800 rounded-2xl border-4 border-yellow-500 p-6 max-w-md w-full text-center shadow-[0_0_50px_rgba(234,179,8,0.3)] relative overflow-hidden">
+    <div className="bg-gray-800 rounded-2xl border-4 border-yellow-500 p-4 md:p-6 max-w-md w-full text-center shadow-[0_0_50px_rgba(234,179,8,0.3)] relative overflow-hidden flex flex-col max-h-[90vh]">
       <div className="absolute inset-0 bg-yellow-500/10 animate-pulse pointer-events-none" />
-      <div className="relative z-10">
-        <h3 className="text-3xl font-black text-white mb-2 uppercase italic transform -rotate-2">
+      <div className="relative z-10 flex flex-col h-full">
+        <h3 className="text-2xl md:text-3xl font-black text-white mb-2 uppercase italic transform -rotate-2">
           Sweet Opportunity!
         </h3>
-        <p className="text-gray-300 mb-6 text-lg">
+        <p className="text-gray-300 mb-4 text-sm md:text-base">
           You drew a{" "}
           <strong className="text-yellow-400">{FRUITS[fruitType].name}</strong>!
-          <br />
-          <span className="text-white font-bold">{targetName}</span> has them
-          sitting in their danger zone.
+          The following players have them ripe for the taking:
         </p>
 
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-4 shrink-0">
           <Card type={fruitType} size="lg" animate />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="bg-black/40 rounded-xl p-3 mb-4 overflow-y-auto border border-gray-700 flex-1 min-h-0">
+          {targets.map((t, i) => (
+            <div
+              key={i}
+              className="flex justify-between items-center py-2 border-b border-gray-700 last:border-0"
+            >
+              <span className="font-bold text-white flex items-center gap-2">
+                <User size={16} className="text-gray-400" /> {t.name}
+              </span>
+              <span className="bg-yellow-900/50 text-yellow-200 px-2 py-1 rounded text-xs font-mono border border-yellow-500/30">
+                Has {t.count}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 mt-auto">
           <button
             onClick={onPass}
-            className="bg-gray-700 hover:bg-gray-600 text-gray-300 py-4 rounded-xl font-bold transition-all"
+            className="bg-gray-700 hover:bg-gray-600 text-gray-300 py-3 rounded-xl font-bold transition-all text-sm md:text-base"
           >
-            Leave Them Be
+            Pass
           </button>
           <button
             onClick={onSteal}
-            className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-4 rounded-xl font-black text-xl shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2"
+            className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3 rounded-xl font-black text-sm md:text-xl shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2"
           >
-            <Hand /> STEAL ALL!
+            <Hand size={18} /> STEAL ALL!
           </button>
         </div>
       </div>
-    </div>
-  </div>
-);
-
-const BustModal = ({ onConfirm }) => (
-  <div className="fixed inset-0 bg-red-900/90 z-[100] flex items-center justify-center p-4 animate-in zoom-in duration-300">
-    <div className="text-center">
-      <Skull size={120} className="text-white mx-auto mb-6 animate-bounce" />
-      <h1 className="text-6xl md:text-8xl font-black text-white mb-4 drop-shadow-[0_5px_5px_rgba(0,0,0,1)] uppercase tracking-tighter">
-        BUSTED!
-      </h1>
-      <p className="text-2xl text-red-200 mb-8 font-bold">
-        Too greedy! All fruits lost.
-      </p>
-      <button
-        onClick={onConfirm}
-        className="bg-white text-red-900 px-8 py-4 rounded-full font-black text-xl hover:scale-110 transition-transform shadow-2xl"
-      >
-        Darn it!
-      </button>
     </div>
   </div>
 );
@@ -329,9 +425,8 @@ const GameGuideModal = ({ onClose }) => (
           <div>
             <h3 className="font-bold text-white text-lg">1. Push Your Luck</h3>
             <p className="text-sm">
-              Draw fruits from the deck one by one. They go into your{" "}
-              <strong className="text-red-400">Risk Zone</strong>. Try to
-              collect as many as possible without busting!
+              Draw fruits from the deck. They enter your{" "}
+              <strong className="text-red-400">Risk Zone</strong>.
             </p>
           </div>
         </div>
@@ -341,11 +436,19 @@ const GameGuideModal = ({ onClose }) => (
             <Skull size={24} />
           </div>
           <div>
-            <h3 className="font-bold text-white text-lg">2. Don't Bust</h3>
+            <h3 className="font-bold text-white text-lg">2. The Bust Rule</h3>
             <p className="text-sm">
-              If you draw a fruit that matches one <em>already</em> in your Risk
-              Zone, you <strong>BUST</strong>! All fruits from this turn are
-              discarded.
+              You are safe if you have <strong>3 or fewer cards</strong> in your
+              Risk Zone.
+              <br />
+              <strong>Only if you have 3+ cards:</strong> Drawing a fruit that
+              matches one <em>already</em> in your Risk Zone causes a{" "}
+              <strong>BUST</strong>! All fruits from this turn are lost.
+              <br />
+              <em>
+                Note: Stealing does NOT cause a Bust, but having 3+ cards after
+                stealing puts you in danger for your NEXT draw!
+              </em>
             </p>
           </div>
         </div>
@@ -360,7 +463,8 @@ const GameGuideModal = ({ onClose }) => (
               If you draw a fruit that an opponent has in their{" "}
               <strong className="text-orange-400">Danger Zone</strong> (Table),
               you can <strong>STEAL</strong> them! They are added to your Risk
-              Zone (increasing your reward, but risking a bigger bust).
+              Zone. Watch out: this increases your card count, making a Bust
+              more likely on your next draw!
             </p>
           </div>
         </div>
@@ -372,13 +476,13 @@ const GameGuideModal = ({ onClose }) => (
           <div>
             <h3 className="font-bold text-white text-lg">4. Bank & Win</h3>
             <p className="text-sm">
-              If you stop before busting, your fruits move to your{" "}
+              Stop before busting to move fruits to your{" "}
               <strong>Danger Zone</strong>. At the start of your <em>next</em>{" "}
-              turn, they move to your <strong>Safe Zone</strong> (Bank) and
-              become points.
+              turn, they move to your <strong>Safe Zone</strong>.
               <br />
               <br />
-              When the deck runs out, the player with the most fruits wins!
+              <strong>Winning:</strong> The player with the highest total{" "}
+              <strong>VALUE</strong> (not count) of banked fruits wins!
             </p>
           </div>
         </div>
@@ -412,7 +516,7 @@ export default function FructoseFury() {
   const [showGuide, setShowGuide] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showLogHistory, setShowLogHistory] = useState(false);
-  const [bustAnimation, setBustAnimation] = useState(false);
+  const [currentEvent, setCurrentEvent] = useState(null); // For popup
 
   // --- Auth & Maintenance ---
   useEffect(() => {
@@ -456,6 +560,17 @@ export default function FructoseFury() {
           } else if (data.status === "lobby") {
             setView("lobby");
           }
+
+          // Handle Events Popup
+          if (data.lastEvent && data.lastEvent.timestamp > Date.now() - 3000) {
+            // Avoid re-showing same event constantly if strict check needed,
+            // but timestamp check usually suffices if clients drift isn't huge.
+            // Better: Store local ID of last seen event.
+            if (data.lastEvent.id !== currentEvent?.id) {
+              setCurrentEvent(data.lastEvent);
+              setTimeout(() => setCurrentEvent(null), 2500);
+            }
+          }
         } else {
           setRoomId("");
           setView("menu");
@@ -464,7 +579,7 @@ export default function FructoseFury() {
       }
     );
     return () => unsub();
-  }, [roomId, user]);
+  }, [roomId, user, currentEvent]);
 
   // --- Logic Functions ---
 
@@ -493,8 +608,9 @@ export default function FructoseFury() {
       deck: deck,
       turnIndex: 0,
       turnPhase: "IDLE", // IDLE, DRAWING, STEALING
-      stealTargetId: null, // If stealing phase active
+      stealTargetIds: [], // Now array for multiple targets
       drawnCard: null, // The card just drawn
+      lastEvent: null, // For popups
       logs: [],
     };
 
@@ -559,7 +675,6 @@ export default function FructoseFury() {
 
   const startGame = async () => {
     if (gameState.hostId !== user.uid) return;
-    // Shuffle deck again just in case
     const deck = shuffle([...DECK_TEMPLATE]);
 
     await updateDoc(
@@ -629,17 +744,27 @@ export default function FructoseFury() {
     setShowLeaveConfirm(false);
   };
 
-  const nextTurn = async (currentPlayers, currentDeck, logs = []) => {
+  // Move to next player
+  // Also processes Auto-Banking for the UPCOMING player
+  const nextTurn = async (
+    currentPlayers,
+    currentDeck,
+    logs = [],
+    event = null
+  ) => {
     let nextIdx = (gameState.turnIndex + 1) % currentPlayers.length;
 
-    // Auto-Bank for the NEXT player
+    // Auto-Bank for the NEXT player (Move Table -> Bank)
     const nextPlayer = currentPlayers[nextIdx];
+    let bankEvent = null;
+
     if (nextPlayer.table.length > 0) {
-      const bankedCount = nextPlayer.table.length;
-      nextPlayer.bank = [...nextPlayer.bank, ...nextPlayer.table];
+      const bankedValue = calculateScore(nextPlayer.table);
+      // Safe access to bank, fallback to empty array if undefined
+      nextPlayer.bank = [...(nextPlayer.bank || []), ...nextPlayer.table];
       nextPlayer.table = [];
       logs.push({
-        text: `${nextPlayer.name} banked ${bankedCount} fruits!`,
+        text: `${nextPlayer.name} banked ${bankedValue} points!`,
         type: "success",
       });
     }
@@ -652,101 +777,115 @@ export default function FructoseFury() {
         turnIndex: nextIdx,
         turnPhase: "DRAWING",
         drawnCard: null,
-        stealTargetId: null,
+        stealTargetIds: [],
+        lastEvent: event || bankEvent || null,
         logs: arrayUnion(...logs),
       }
     );
   };
 
+  const checkBust = (hand, newCard) => {
+    // Bust happens ONLY if:
+    // 1. You ALREADY have >= 3 cards in the risk zone.
+    // 2. The NEW drawn card matches something in your existing hand.
+
+    if (hand.length < 3) return false;
+
+    return hand.includes(newCard);
+  };
+
   const handleDraw = async () => {
-    if (gameState.deck.length === 0) return; // Game Over trigger usually handled elsewhere, but safe guard
+    if (gameState.deck.length === 0) return;
 
     const players = [...gameState.players];
     const deck = [...gameState.deck];
     const me = players[gameState.turnIndex];
     const cardType = deck.pop();
 
-    // Check Bust
-    const hasMatchInHand = me.hand.includes(cardType);
-
-    if (hasMatchInHand) {
+    // Priority 1: Check Bust FIRST
+    // If player has 3+ cards and draws a matching card, they bust immediately.
+    // They do NOT get the option to steal if they are already busting.
+    if (checkBust(me.hand, cardType)) {
       // BUST LOGIC
-      me.hand = []; // Discard hand
+      const event = {
+        id: Date.now(),
+        type: "BUST",
+        title: "BUSTED!",
+        message: `${me.name} got greedy!`,
+      };
       const logs = [
         {
-          text: `${me.name} drew a ${FRUITS[cardType].name} and BUSTED!`,
+          text: `${me.name} drew ${FRUITS[cardType].name} and BUSTED!`,
           type: "danger",
         },
       ];
 
+      // We pass 'players' (unmodified hand) to the update so the UI keeps showing the hand during the "BUSTED" overlay
       await updateDoc(
         doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
         {
-          players,
+          players, // Hand intact for visual context
           deck,
+          lastEvent: event,
           logs: arrayUnion(...logs),
-          drawnCard: cardType, // Briefly show what killed them?
+          drawnCard: cardType,
+          turnPhase: "BUSTED", // Temporary phase to lock controls
         }
       );
 
-      // Trigger visual bust locally for everyone (via snapshot update) but we can't easily animate for all.
-      // We'll rely on the log and state change.
-      // Delay next turn slightly for visual effect
-      setTimeout(() => nextTurn(players, deck), 2000);
-    } else {
-      // Check Steal Opportunity
-      let stealTarget = null;
+      // Prepare wiped hand for the actual next turn state
+      const nextPlayers = JSON.parse(JSON.stringify(players));
+      nextPlayers[gameState.turnIndex].hand = [];
 
-      // Find first player who has this card in their TABLE (Danger Zone)
-      // We prioritize the player with the MOST of that card? Or just first found?
-      // Usually you steal ALL matching cards.
-      // Let's check if ANYONE has it.
-      for (let p of players) {
-        if (p.id !== me.id && p.table.includes(cardType)) {
-          stealTarget = p.id;
-          break; // Found a victim
-        }
+      setTimeout(() => nextTurn(nextPlayers, deck, [], null), 2500);
+      return; // Exit early
+    }
+
+    // Priority 2: Check Steal Opportunity
+    // Only if they survived the bust check do we check for steals.
+    const stealTargetIds = [];
+    for (let p of players) {
+      if (p.id !== me.id && p.table.includes(cardType)) {
+        stealTargetIds.push(p.id);
       }
+    }
 
-      if (stealTarget) {
-        // Steal Phase
+    if (stealTargetIds.length > 0) {
+      // Trigger Steal Phase
+      await updateDoc(
+        doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
+        {
+          deck,
+          drawnCard: cardType,
+          turnPhase: "STEALING",
+          stealTargetIds: stealTargetIds,
+        }
+      );
+    } else {
+      // Priority 3: Safe Draw (No Steal, No Bust)
+      me.hand.push(cardType);
+
+      if (deck.length === 0) {
         await updateDoc(
           doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
           {
-            deck, // Card is technically drawn but held in limbo or handled?
-            // Wait, we need to show the card. Let's add it to hand temporarily or hold it in 'drawnCard'
-            drawnCard: cardType,
-            turnPhase: "STEALING",
-            stealTargetId: stealTarget,
+            players,
+            deck,
+            status: "finished",
+            logs: arrayUnion({
+              text: "Deck Empty! Game Over!",
+              type: "neutral",
+            }),
           }
         );
       } else {
-        // Safe Draw
-        me.hand.push(cardType);
-
-        // End game check?
-        if (deck.length === 0) {
-          await updateDoc(
-            doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
-            {
-              players,
-              deck,
-              status: "finished",
-              logs: arrayUnion({
-                text: "Deck Empty! Game Over!",
-                type: "neutral",
-              }),
-            }
-          );
-        } else {
-          await updateDoc(
-            doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
-            {
-              players,
-              deck,
-            }
-          );
-        }
+        await updateDoc(
+          doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
+          {
+            players,
+            deck,
+          }
+        );
       }
     }
   };
@@ -755,37 +894,54 @@ export default function FructoseFury() {
     const players = [...gameState.players];
     const meIdx = gameState.turnIndex;
     const me = players[meIdx];
-    const targetIdx = players.findIndex(
-      (p) => p.id === gameState.stealTargetId
-    );
-    const target = players[targetIdx];
     const cardType = gameState.drawnCard;
 
     const logs = [];
+    let event = null;
 
-    // Add the drawn card to hand regardless
+    // Start with adding the drawn card (the one that triggered the steal option)
     me.hand.push(cardType);
 
     if (doSteal) {
-      // Move matching cards from target table to my hand
-      const stolenCards = target.table.filter((c) => c === cardType);
-      const remainingTable = target.table.filter((c) => c !== cardType);
+      // Steal from ALL identified targets
+      let totalStolen = 0;
+      const targetNames = [];
 
-      target.table = remainingTable;
-      me.hand = [...me.hand, ...stolenCards];
+      gameState.stealTargetIds.forEach((targetId) => {
+        const targetIdx = players.findIndex((p) => p.id === targetId);
+        if (targetIdx === -1) return;
+
+        const target = players[targetIdx];
+        const stolenCards = target.table.filter((c) => c === cardType);
+        const remainingTable = target.table.filter((c) => c !== cardType);
+
+        if (stolenCards.length > 0) {
+          target.table = remainingTable;
+          me.hand = [...me.hand, ...stolenCards];
+          totalStolen += stolenCards.length;
+          targetNames.push(target.name);
+        }
+      });
 
       logs.push({
-        text: `${me.name} stole ${stolenCards.length} ${FRUITS[cardType].name}(s) from ${target.name}!`,
+        text: `${me.name} stole ${totalStolen} ${
+          FRUITS[cardType].name
+        }(s) from ${targetNames.join(", ")}!`,
         type: "warning",
       });
+      event = {
+        id: Date.now(),
+        type: "STEAL",
+        title: "THIEF!",
+        message: `${me.name} stole ${totalStolen} fruits!`,
+      };
     } else {
-      logs.push({
-        text: `${me.name} passed on stealing ${FRUITS[cardType].name}.`,
-        type: "neutral",
-      });
+      logs.push({ text: `${me.name} passed on stealing.`, type: "neutral" });
     }
 
-    // Check if deck empty (GAME OVER condition check after this action)
+    // No Bust Check Here! Bust is only on Draw.
+    // Just update state.
+
     if (gameState.deck.length === 0) {
       await updateDoc(
         doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
@@ -804,8 +960,9 @@ export default function FructoseFury() {
         {
           players,
           turnPhase: "DRAWING",
-          stealTargetId: null,
+          stealTargetIds: [],
           drawnCard: null,
+          lastEvent: event,
           logs: arrayUnion(...logs),
         }
       );
@@ -816,17 +973,11 @@ export default function FructoseFury() {
     const players = [...gameState.players];
     const me = players[gameState.turnIndex];
 
-    // Move Hand -> Table
+    // Move Hand -> Table (Danger Zone)
     me.table = [...me.table, ...me.hand];
     me.hand = [];
 
-    const logs = [
-      {
-        text: `${me.name} stopped. Fruits moved to Danger Zone.`,
-        type: "neutral",
-      },
-    ];
-
+    const logs = [{ text: `${me.name} stopped safely.`, type: "neutral" }];
     await nextTurn(players, gameState.deck, logs);
   };
 
@@ -858,17 +1009,31 @@ export default function FructoseFury() {
   if (isMaintenance) {
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center text-white p-4 text-center">
-        <div className="bg-yellow-500/10 p-8 rounded-2xl border border-yellow-500/30">
+        <div className="bg-orange-500/10 p-8 rounded-2xl border border-orange-500/30">
           <Hammer
             size={64}
-            className="text-yellow-500 mx-auto mb-4 animate-bounce"
+            className="text-orange-500 mx-auto mb-4 animate-bounce"
           />
-          <h1 className="text-3xl font-bold mb-2">Orchard Closed</h1>
+          <h1 className="text-3xl font-bold mb-2">Under Maintenance</h1>
           <p className="text-gray-400">
             The farmers are tending to the trees. Come back later for fresh
             fruit.
           </p>
         </div>
+        {/* Add Spacing Between Boxes */}
+        <div className="h-8"></div>
+
+        {/* Clickable Second Card */}
+        <a href="https://rawfidkshuvo.github.io/gamehub/">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <div className="text-center pb-12 animate-pulse">
+              <div className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900/50 rounded-full border border-indigo-500/20 text-indigo-300 font-bold tracking-widest text-sm uppercase backdrop-blur-sm">
+                <Sparkles size={16} /> Visit Gamehub...Try our other releases...{" "}
+                <Sparkles size={16} />
+              </div>
+            </div>
+          </div>
+        </a>
       </div>
     );
   }
@@ -942,7 +1107,6 @@ export default function FructoseFury() {
 
   if (view === "lobby" && gameState) {
     const isHost = gameState.hostId === user.uid;
-    const allReady = gameState.players.every((p) => p.ready);
 
     return (
       <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6 relative">
@@ -1027,18 +1191,9 @@ export default function FructoseFury() {
               Start Harvest
             </button>
           ) : (
-            <button
-              onClick={toggleReady}
-              className={`w-full py-4 rounded-xl font-black text-xl uppercase tracking-widest shadow-lg transition-all ${
-                gameState.players.find((p) => p.id === user.uid)?.ready
-                  ? "bg-gray-700 text-green-400 border-2 border-green-500"
-                  : "bg-blue-600 hover:bg-blue-500 text-white hover:scale-105"
-              }`}
-            >
-              {gameState.players.find((p) => p.id === user.uid)?.ready
-                ? "Ready!"
-                : "Mark Ready"}
-            </button>
+            <div className="w-full py-4 rounded-xl font-bold text-xl text-center text-gray-500 bg-gray-800/50 border border-gray-700 animate-pulse">
+              Waiting for Host to Start...
+            </div>
           )}
         </div>
 
@@ -1054,30 +1209,46 @@ export default function FructoseFury() {
   }
 
   if (view === "game" && gameState) {
+    // FIX: Guard against 'me' being undefined if players array updates and user isn't found immediately
     const me = gameState.players.find((p) => p.id === user.uid);
+    if (!me)
+      return (
+        <div className="text-white text-center mt-20">Syncing game data...</div>
+      );
+
     const isMyTurn = gameState.players[gameState.turnIndex].id === user.uid;
     const opponent = gameState.players.filter((p) => p.id !== user.uid);
     const activePlayer = gameState.players[gameState.turnIndex];
 
     const isStealing = gameState.turnPhase === "STEALING";
-    const stealTargetName = isStealing
-      ? gameState.players.find((p) => p.id === gameState.stealTargetId)?.name
-      : "";
+    // Prepare Steal Targets info if stealing
+    let potentialTargets = [];
+    if (isStealing && gameState.stealTargetIds) {
+      potentialTargets = gameState.stealTargetIds
+        .map((tid) => {
+          const p = gameState.players.find((pl) => pl.id === tid);
+          if (!p) return null;
+          const count = p.table.filter((c) => c === gameState.drawnCard).length;
+          return { name: p.name, count };
+        })
+        .filter((t) => t !== null);
+    }
 
     // Calculate winner if finished
     let winner = null;
     if (gameState.status === "finished") {
       winner = [...gameState.players].sort(
-        (a, b) => b.bank.length - a.bank.length
+        (a, b) => calculateScore(b.bank) - calculateScore(a.bank)
       )[0];
     }
 
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex flex-col relative overflow-hidden">
+      <div className="h-screen bg-gray-950 text-white flex flex-col relative overflow-hidden">
         <FloatingBackground />
+        <EventOverlay event={currentEvent} />
 
         {/* Header */}
-        <div className="h-14 bg-gray-900/90 border-b border-gray-800 flex items-center justify-between px-4 z-50 sticky top-0 backdrop-blur-md">
+        <div className="h-14 bg-gray-900/90 border-b border-gray-800 flex items-center justify-between px-4 z-50 sticky top-0 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-2">
             <Banana className="text-yellow-500" size={20} />
             <span className="font-black uppercase tracking-tight text-lg hidden md:block">
@@ -1109,11 +1280,10 @@ export default function FructoseFury() {
         {/* Modals */}
         {isStealing && isMyTurn && (
           <StealModal
-            targetName={stealTargetName}
+            targets={potentialTargets}
             fruitType={gameState.drawnCard}
             onSteal={() => {
-              // Optimistic UI update could go here
-              const updated = handleSteal(true);
+              handleSteal(true);
             }}
             onPass={() => handleSteal(false)}
           />
@@ -1169,7 +1339,7 @@ export default function FructoseFury() {
             <p className="text-2xl text-gray-300 mb-8">
               The Master Farmer is{" "}
               <span className="text-yellow-400 font-bold">{winner?.name}</span>{" "}
-              with {winner?.bank.length} fruits!
+              with {calculateScore(winner?.bank || [])} points!
             </p>
             <div className="grid grid-cols-2 gap-4 max-w-md w-full">
               {gameState.players.map((p) => (
@@ -1186,7 +1356,9 @@ export default function FructoseFury() {
                   >
                     {p.name}
                   </span>
-                  <span className="font-mono text-xl">{p.bank.length}</span>
+                  <span className="font-mono text-xl">
+                    {calculateScore(p.bank || [])}
+                  </span>
                 </div>
               ))}
             </div>
@@ -1210,29 +1382,30 @@ export default function FructoseFury() {
         )}
 
         {/* Main Game Area */}
-        <div className="flex-1 flex flex-col max-w-6xl mx-auto w-full p-4 gap-4">
-          {/* Top: Opponents */}
-          <div className="flex-1 flex items-start justify-center gap-4 flex-wrap content-start min-h-[120px]">
+        <div className="flex-1 flex flex-col w-full max-w-6xl mx-auto p-2 md:p-4 gap-2 md:gap-4 overflow-hidden">
+          {/* Top: Opponents - Scrollable on mobile */}
+          <div className="flex-none h-32 md:h-auto flex items-start gap-2 overflow-x-auto pb-2 md:pb-0 md:flex-wrap md:justify-center no-scrollbar px-2">
             {opponent.map((p) => (
               <div
                 key={p.id}
-                className={`bg-gray-900/80 p-3 rounded-xl border-2 flex flex-col gap-2 min-w-[140px] transition-all ${
+                className={`bg-gray-900/80 p-3 rounded-xl border-2 flex flex-col gap-2 min-w-[130px] md:min-w-[140px] transition-all ${
                   gameState.players[gameState.turnIndex].id === p.id
                     ? "border-yellow-500 scale-105 shadow-yellow-900/20 shadow-lg"
                     : "border-gray-800 opacity-80"
                 }`}
               >
                 <div className="flex justify-between items-center border-b border-gray-700 pb-1">
-                  <span className="font-bold text-sm truncate max-w-[100px]">
+                  <span className="font-bold text-sm truncate max-w-[80px]">
                     {p.name}
                   </span>
                   <div className="flex items-center gap-1 bg-green-900/30 px-1.5 rounded text-green-400 text-xs">
-                    <Trophy size={10} /> {p.bank.length}
+                    {/* FIX: Ensure p.bank exists before calculating score */}
+                    <Trophy size={10} /> {calculateScore(p.bank || [])}
                   </div>
                 </div>
 
                 {/* Opponent Danger Zone (Stealable) */}
-                <div className="flex flex-wrap gap-1 min-h-[40px] bg-black/20 rounded p-1">
+                <div className="flex flex-wrap gap-1 min-h-[40px] bg-black/20 rounded p-1 overflow-x-auto">
                   {p.table.length === 0 ? (
                     <span className="text-[10px] text-gray-600 w-full text-center py-2">
                       Safe
@@ -1253,55 +1426,75 @@ export default function FructoseFury() {
           </div>
 
           {/* Center: Action Area */}
-          <div className="flex-[2] flex flex-col items-center justify-center gap-8 relative">
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 relative min-h-0">
             {/* Log Ticker */}
-            <div className="absolute top-0 pointer-events-none w-full flex justify-center">
+            <div className="absolute top-0 pointer-events-none w-full flex justify-center z-10">
               {gameState.logs.length > 0 && (
-                <div className="bg-black/60 backdrop-blur px-4 py-1 rounded-full text-xs text-yellow-100/80 border border-yellow-500/20 animate-in fade-in slide-in-from-top-2">
+                <div className="bg-black/60 backdrop-blur px-4 py-1 rounded-full text-xs text-yellow-100/80 border border-yellow-500/20 animate-in fade-in slide-in-from-top-2 text-center max-w-[90%] truncate">
                   {gameState.logs[gameState.logs.length - 1].text}
                 </div>
               )}
             </div>
 
-            <div className="flex items-center gap-8 md:gap-16">
+            <div className="flex items-center gap-4 md:gap-16">
               {/* Deck */}
               <button
-                onClick={isMyTurn && !isStealing ? handleDraw : undefined}
-                disabled={!isMyTurn || isStealing}
-                className={`relative w-24 h-36 md:w-32 md:h-48 bg-gray-800 rounded-xl border-4 border-gray-700 shadow-2xl flex items-center justify-center group transition-all ${
-                  isMyTurn && !isStealing
+                onClick={
+                  isMyTurn && !isStealing && gameState.turnPhase !== "BUSTED"
+                    ? handleDraw
+                    : undefined
+                }
+                disabled={
+                  !isMyTurn || isStealing || gameState.turnPhase === "BUSTED"
+                }
+                className={`relative w-20 h-32 md:w-32 md:h-48 bg-gray-800 rounded-xl border-4 border-gray-700 shadow-2xl flex items-center justify-center group transition-all ${
+                  isMyTurn && !isStealing && gameState.turnPhase !== "BUSTED"
                     ? "hover:scale-105 cursor-pointer hover:border-yellow-500 ring-4 ring-yellow-500/20"
                     : "opacity-80 cursor-default"
                 }`}
               >
                 <div className="absolute inset-2 border-2 border-dashed border-gray-600 rounded-lg" />
                 <div className="text-center z-10">
-                  <span className="block font-black text-2xl text-gray-500">
+                  <span className="block font-black text-xl md:text-2xl text-gray-500">
                     {gameState.deck.length}
                   </span>
                   <span className="text-[10px] uppercase text-gray-600 font-bold">
                     Cards Left
                   </span>
                 </div>
-                {isMyTurn && !isStealing && (
-                  <div className="absolute -bottom-8 bg-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-full animate-bounce shadow-lg">
-                    DRAW!
-                  </div>
-                )}
+                {isMyTurn &&
+                  !isStealing &&
+                  gameState.turnPhase !== "BUSTED" && (
+                    <div className="absolute -bottom-6 md:-bottom-8 bg-yellow-500 text-black text-[10px] md:text-xs font-bold px-3 py-1 rounded-full animate-bounce shadow-lg">
+                      DRAW!
+                    </div>
+                  )}
               </button>
 
               {/* Current Hand (Risk Zone) */}
-              <div className="flex items-center justify-center p-4 bg-gray-900/50 rounded-3xl border-2 border-dashed border-gray-700 min-h-[160px] min-w-[200px] md:min-w-[400px]">
-                {activePlayer.hand.length === 0 ? (
-                  <span className="text-gray-600 font-bold uppercase tracking-widest text-sm">
+              <div className="flex items-center justify-center p-2 md:p-4 bg-gray-900/50 rounded-3xl border-2 border-dashed border-gray-700 min-h-[140px] md:min-h-[160px] min-w-[160px] md:min-w-[400px] max-w-[200px] md:max-w-none overflow-x-auto no-scrollbar relative">
+                {/* Show Drawn Card Overlay if Busted */}
+                {gameState.drawnCard && gameState.turnPhase === "BUSTED" && (
+                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-3xl animate-in fade-in">
+                    <div className="transform rotate-12 scale-110 shadow-2xl shadow-red-500/50">
+                      <Card type={gameState.drawnCard} size="lg" />
+                      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-red-600 text-white font-black px-2 py-1 rounded text-xs uppercase tracking-widest whitespace-nowrap">
+                        Fatal Draw
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activePlayer.hand.length === 0 && !gameState.drawnCard ? (
+                  <span className="text-gray-600 font-bold uppercase tracking-widest text-xs md:text-sm">
                     Risk Zone Empty
                   </span>
                 ) : (
-                  <div className="flex -space-x-8 md:-space-x-12">
+                  <div className="flex -space-x-8 md:-space-x-12 px-4">
                     {activePlayer.hand.map((fruit, i) => (
                       <div
                         key={i}
-                        className="transform transition-transform hover:-translate-y-4 hover:scale-110 z-0 hover:z-10"
+                        className="transform transition-transform hover:-translate-y-4 hover:scale-110 z-0 hover:z-10 shrink-0"
                       >
                         <Card
                           type={fruit}
@@ -1316,19 +1509,19 @@ export default function FructoseFury() {
 
             {/* Controls */}
             {isMyTurn && activePlayer.hand.length > 0 && !isStealing && (
-              <div className="flex gap-4 animate-in slide-in-from-bottom-4">
+              <div className="flex gap-4 animate-in slide-in-from-bottom-4 z-20">
                 <button
                   onClick={handleStop}
-                  className="bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-xl font-black text-xl shadow-lg shadow-green-900/20 transform hover:scale-105 transition-all flex items-center gap-2"
+                  className="bg-green-600 hover:bg-green-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-black text-lg md:text-xl shadow-lg shadow-green-900/20 transform hover:scale-105 transition-all flex items-center gap-2"
                 >
-                  <CheckCircle /> BANK IT!
+                  <CheckCircle size={20} /> BANK IT!
                 </button>
               </div>
             )}
 
             {/* Status Text */}
             {!isMyTurn && (
-              <div className="bg-gray-900/80 px-6 py-3 rounded-full border border-gray-700 text-gray-400 font-mono text-sm animate-pulse">
+              <div className="bg-gray-900/80 px-4 md:px-6 py-2 md:py-3 rounded-full border border-gray-700 text-gray-400 font-mono text-xs md:text-sm animate-pulse text-center">
                 Waiting for {activePlayer.name}...
               </div>
             )}
@@ -1336,45 +1529,47 @@ export default function FructoseFury() {
 
           {/* Bottom: My Player Area */}
           <div
-            className={`bg-gray-900 p-4 rounded-t-3xl border-t-4 ${
+            className={`flex-none bg-gray-900 p-3 md:p-4 rounded-t-3xl border-t-4 ${
               isMyTurn ? "border-yellow-500" : "border-gray-800"
             } shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-20`}
           >
             <div className="flex justify-between items-end">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 md:gap-4">
                 <div className="relative">
-                  <div className="w-16 h-16 bg-gray-800 rounded-full border-2 border-gray-600 flex items-center justify-center overflow-hidden">
-                    <User size={32} className="text-gray-400" />
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-800 rounded-full border-2 border-gray-600 flex items-center justify-center overflow-hidden">
+                    <User size={24} className="text-gray-400 md:hidden" />
+                    <User size={32} className="text-gray-400 hidden md:block" />
                   </div>
-                  <div className="absolute -top-2 -right-2 bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-lg border-2 border-gray-900">
-                    {me.bank.length}
+                  <div className="absolute -top-2 -right-2 bg-green-600 text-white w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center font-bold text-xs md:text-base shadow-lg border-2 border-gray-900">
+                    {/* FIX: Ensure me.bank is treated as empty array if undefined */}
+                    {calculateScore(me.bank || [])}
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white">
+                  <h3 className="text-sm md:text-xl font-bold text-white">
                     {me.name} (You)
                   </h3>
-                  <div className="text-xs text-green-400 font-bold uppercase tracking-wider">
+                  <div className="text-[10px] md:text-xs text-green-400 font-bold uppercase tracking-wider">
                     Safe Zone
                   </div>
                 </div>
               </div>
 
               {/* My Danger Zone (Pending Bank) */}
-              <div className="flex-1 ml-8 flex flex-col items-end">
-                <span className="text-xs text-orange-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
-                  <AlertTriangle size={12} /> Danger Zone (Next Turn Bank)
+              <div className="flex-1 ml-4 md:ml-8 flex flex-col items-end overflow-hidden">
+                <span className="text-[10px] md:text-xs text-orange-400 font-bold uppercase tracking-wider mb-1 md:mb-2 flex items-center gap-1 whitespace-nowrap">
+                  <AlertTriangle size={12} /> Danger Zone (Next Turn)
                 </span>
-                <div className="flex flex-wrap justify-end gap-2 bg-black/30 p-2 rounded-xl border border-gray-800 w-full md:w-auto min-h-[60px] min-w-[150px]">
+                <div className="flex flex-wrap justify-end gap-1 md:gap-2 bg-black/30 p-2 rounded-xl border border-gray-800 w-full md:w-auto min-h-[50px] md:min-h-[60px] min-w-[120px] md:min-w-[150px] overflow-x-auto">
                   {me.table.length === 0 ? (
-                    <span className="text-gray-600 text-xs self-center mx-auto">
+                    <span className="text-gray-600 text-[10px] md:text-xs self-center mx-auto">
                       Empty
                     </span>
                   ) : (
                     me.table.map((fruit, i) => (
                       <div
                         key={i}
-                        className="transform scale-75 hover:scale-100 transition-transform origin-bottom"
+                        className="transform scale-75 hover:scale-100 transition-transform origin-bottom shrink-0"
                       >
                         <Card type={fruit} size="sm" />
                       </div>
