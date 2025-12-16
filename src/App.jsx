@@ -47,6 +47,7 @@ import {
   Sun,
   Gem,
   Megaphone,
+  ShieldCheck,
 } from "lucide-react";
 
 // --- Firebase Config & Init ---
@@ -56,7 +57,7 @@ const firebaseConfig = {
   projectId: "game-hub-ff8aa",
   storageBucket: "game-hub-ff8aa.firebasestorage.app",
   messagingSenderId: "586559578902",
-  appId: "1:586559578902:web:c447da22d85544e16aa637"
+  appId: "1:586559578902:web:c447da22d85544e16aa637",
 };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -66,7 +67,6 @@ const APP_ID = typeof __app_id !== "undefined" ? __app_id : "fructose-fury";
 const GAME_ID = "20"; // Assigned ID for Fructose Fury
 
 // --- Game Constants ---
-// Updated to 10 Fruits with specific values and counts
 const FRUITS = {
   CHERRY: {
     name: "Strawberry",
@@ -191,8 +191,12 @@ const calculateScore = (cards) => {
 
 // --- Visual Components ---
 
-const FloatingBackground = () => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+const FloatingBackground = ({ isShaking }) => (
+  <div
+    className={`absolute inset-0 overflow-hidden pointer-events-none z-0 ${
+      isShaking ? "animate-shake bg-red-900/20" : ""
+    }`}
+  >
     <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-900/20 via-gray-950 to-black" />
     <div className="absolute top-0 left-0 w-full h-full opacity-10">
       {[...Array(20)].map((_, i) => {
@@ -220,6 +224,13 @@ const FloatingBackground = () => (
         50% { transform: translateY(-20px) rotate(10deg); }
       }
       .animate-float { animation: float infinite ease-in-out; }
+      
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+      }
+      .animate-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
     `}</style>
   </div>
 );
@@ -259,7 +270,6 @@ const Card = ({ type, size = "md", animate = false }) => {
           {fruit.name}
         </span>
       )}
-      {/* ALWAYS show value now, even on small cards */}
       <div className="absolute bottom-1 right-1 bg-black/50 px-1 rounded text-white/80 text-[10px] md:text-xs font-mono font-bold">
         {fruit.val}
       </div>
@@ -269,9 +279,27 @@ const Card = ({ type, size = "md", animate = false }) => {
 
 // --- Modal & Overlay Components ---
 
-// NEW: Event Overlay for better visibility
-const EventOverlay = ({ event }) => {
+const EventOverlay = ({ event, currentUserId }) => {
   if (!event) return null;
+
+  // If I am the victim of a steal, show a specific modal instead of this generic one (handled by VictimModal)
+  if (
+    event.type === "STEAL" &&
+    event.targetIds &&
+    event.targetIds.includes(currentUserId)
+  ) {
+    return null;
+  }
+
+  // If I am the thief, I don't need a popup (I know what I did)
+  if (event.type === "STEAL" && event.thiefId === currentUserId) {
+    return null;
+  }
+
+  // If I am the one banking, I see the BankSuccessModal instead (handled by bankSuccessData state)
+  if (event.type === "BANK" && event.playerId === currentUserId) {
+    return null;
+  }
 
   let Icon = Info;
   let colorClass = "text-white";
@@ -303,6 +331,73 @@ const EventOverlay = ({ event }) => {
         <p className="text-lg md:text-xl text-white/90 font-bold mt-2">
           {event.message}
         </p>
+      </div>
+    </div>
+  );
+};
+
+const VictimModal = ({ event, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 2500);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[210] flex items-center justify-center pointer-events-none animate-in fade-in zoom-in slide-in-from-top-5">
+      <div className="bg-red-950/90 border-2 border-red-500 p-4 rounded-2xl max-w-xs w-full text-center shadow-2xl backdrop-blur-md">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <AlertTriangle size={32} className="text-red-500 animate-pulse" />
+          <h2 className="text-2xl font-black text-white uppercase">ROBBED!</h2>
+        </div>
+        <p className="text-red-200 text-sm mb-4 font-bold">
+          {event.message || "Someone stole your fruits!"}
+        </p>
+
+        {event.cardType && (
+          <div className="flex flex-col items-center gap-1 mb-2">
+            <span className="text-[10px] uppercase font-bold text-red-300 tracking-widest">
+              Stolen Fruit
+            </span>
+            <div className="transform scale-90">
+              <Card type={event.cardType} size="md" />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const BankSuccessModal = ({ data, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 2500);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[210] flex items-center justify-center pointer-events-none animate-in fade-in zoom-in slide-in-from-top-5">
+      <div className="bg-green-950/90 border-2 border-green-500 p-4 rounded-2xl max-w-xs w-full text-center shadow-2xl backdrop-blur-md">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <ShieldCheck size={32} className="text-green-400 animate-bounce" />
+          <h2 className="text-2xl font-black text-white uppercase">SECURED!</h2>
+        </div>
+        <p className="text-green-100 text-sm mb-3 font-bold">
+          You secured{" "}
+          <span className="text-yellow-300 text-xl font-black">
+            {data.amount}
+          </span>{" "}
+          points!
+        </p>
+
+        {data.cards && data.cards.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-1 opacity-90 max-h-24 overflow-hidden">
+            {data.cards.map((fruit, i) => (
+              <div key={i} className="transform scale-75">
+                <Card type={fruit} size="sm" />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -518,6 +613,13 @@ export default function FructoseFury() {
   const [showLogHistory, setShowLogHistory] = useState(false);
   const [currentEvent, setCurrentEvent] = useState(null); // For popup
 
+  // New Local States for Features
+  const [bankSuccessData, setBankSuccessData] = useState(null); // Shows modal if not null
+  const [victimEvent, setVictimEvent] = useState(null); // Shows modal if user was robbed
+
+  // Ref to track last processed event to avoid useEffect loop
+  const lastProcessedEventId = useRef(null);
+
   // --- Auth & Maintenance ---
   useEffect(() => {
     const initAuth = async () => {
@@ -562,13 +664,44 @@ export default function FructoseFury() {
           }
 
           // Handle Events Popup
-          if (data.lastEvent && data.lastEvent.timestamp > Date.now() - 3000) {
-            // Avoid re-showing same event constantly if strict check needed,
-            // but timestamp check usually suffices if clients drift isn't huge.
-            // Better: Store local ID of last seen event.
-            if (data.lastEvent.id !== currentEvent?.id) {
-              setCurrentEvent(data.lastEvent);
-              setTimeout(() => setCurrentEvent(null), 2500);
+          if (data.lastEvent) {
+            // Fallback if timestamp is missing in legacy data, use ID as rough proxy or skip
+            // But we prefer explicit timestamps.
+            if (data.lastEvent.id !== lastProcessedEventId.current) {
+              // Allow a larger window (10s) or check simply that ID changed.
+              // Using a timestamp check is good to prevent "replay" on page reload of old games,
+              // but we must ensure we write timestamps first.
+              // Assuming we fix writing timestamps, this check becomes robust.
+              const evtTime = data.lastEvent.timestamp || Date.now();
+              const isRecent = evtTime > Date.now() - 10000; // 10s window
+
+              if (isRecent) {
+                lastProcessedEventId.current = data.lastEvent.id;
+
+                setCurrentEvent(data.lastEvent);
+
+                // Check if I am a victim
+                if (
+                  data.lastEvent.type === "STEAL" &&
+                  data.lastEvent.targetIds &&
+                  data.lastEvent.targetIds.includes(user.uid)
+                ) {
+                  setVictimEvent(data.lastEvent);
+                }
+
+                // Check if I am the one who banked (Finally secured points)
+                if (
+                  data.lastEvent.type === "BANK" &&
+                  data.lastEvent.playerId === user.uid
+                ) {
+                  setBankSuccessData({
+                    amount: data.lastEvent.amount,
+                    cards: data.lastEvent.cards,
+                  });
+                }
+
+                setTimeout(() => setCurrentEvent(null), 3000);
+              }
             }
           }
         } else {
@@ -579,7 +712,7 @@ export default function FructoseFury() {
       }
     );
     return () => unsub();
-  }, [roomId, user, currentEvent]);
+  }, [roomId, user]);
 
   // --- Logic Functions ---
 
@@ -677,10 +810,20 @@ export default function FructoseFury() {
     if (gameState.hostId !== user.uid) return;
     const deck = shuffle([...DECK_TEMPLATE]);
 
+    // Reset readiness for next game inside game loop, or just clear it here
+    const players = gameState.players.map((p) => ({
+      ...p,
+      ready: false,
+      hand: [],
+      table: [],
+      bank: [],
+    }));
+
     await updateDoc(
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
       {
         status: "playing",
+        players,
         deck,
         turnIndex: 0,
         turnPhase: "DRAWING",
@@ -690,6 +833,9 @@ export default function FructoseFury() {
             type: "neutral",
           },
         ],
+        stealTargetIds: [],
+        drawnCard: null,
+        lastEvent: null,
       }
     );
   };
@@ -760,6 +906,7 @@ export default function FructoseFury() {
 
     if (nextPlayer.table.length > 0) {
       const bankedValue = calculateScore(nextPlayer.table);
+      const bankedCards = [...nextPlayer.table]; // Copy cards for event
       // Safe access to bank, fallback to empty array if undefined
       nextPlayer.bank = [...(nextPlayer.bank || []), ...nextPlayer.table];
       nextPlayer.table = [];
@@ -767,6 +914,18 @@ export default function FructoseFury() {
         text: `${nextPlayer.name} banked ${bankedValue} points!`,
         type: "success",
       });
+
+      // Create Event to notify everyone (especially the player who banked)
+      bankEvent = {
+        id: Date.now(),
+        timestamp: Date.now(), // Added explicit timestamp
+        type: "BANK",
+        playerId: nextPlayer.id,
+        amount: bankedValue,
+        cards: bankedCards, // Added cards list
+        title: "SECURED!",
+        message: `${nextPlayer.name} banked ${bankedValue} points!`,
+      };
     }
 
     await updateDoc(
@@ -809,6 +968,7 @@ export default function FructoseFury() {
       // BUST LOGIC
       const event = {
         id: Date.now(),
+        timestamp: Date.now(), // Added explicit timestamp
         type: "BUST",
         title: "BUSTED!",
         message: `${me.name} got greedy!`,
@@ -906,6 +1066,7 @@ export default function FructoseFury() {
       // Steal from ALL identified targets
       let totalStolen = 0;
       const targetNames = [];
+      const victimIds = [];
 
       gameState.stealTargetIds.forEach((targetId) => {
         const targetIdx = players.findIndex((p) => p.id === targetId);
@@ -920,6 +1081,7 @@ export default function FructoseFury() {
           me.hand = [...me.hand, ...stolenCards];
           totalStolen += stolenCards.length;
           targetNames.push(target.name);
+          victimIds.push(targetId);
         }
       });
 
@@ -931,9 +1093,15 @@ export default function FructoseFury() {
       });
       event = {
         id: Date.now(),
+        timestamp: Date.now(), // Added explicit timestamp
         type: "STEAL",
         title: "THIEF!",
-        message: `${me.name} stole ${totalStolen} fruits!`,
+        message: `${
+          me.name
+        } stole ${totalStolen} fruits from ${targetNames.join(", ")}!`,
+        targetIds: victimIds, // NEW: Add victims to event
+        thiefId: me.id, // NEW: Identify thief
+        cardType: cardType, // NEW: Identify card stolen
       };
     } else {
       logs.push({ text: `${me.name} passed on stealing.`, type: "neutral" });
@@ -973,9 +1141,14 @@ export default function FructoseFury() {
     const players = [...gameState.players];
     const me = players[gameState.turnIndex];
 
+    const cardsCount = me.hand.length;
+
     // Move Hand -> Table (Danger Zone)
     me.table = [...me.table, ...me.hand];
     me.hand = [];
+
+    // Removed immediate local modal as per user request
+    // setBankSuccessCount(cardsCount);
 
     const logs = [{ text: `${me.name} stopped safely.`, type: "neutral" }];
     await nextTurn(players, gameState.deck, logs);
@@ -1216,11 +1389,22 @@ export default function FructoseFury() {
         <div className="text-white text-center mt-20">Syncing game data...</div>
       );
 
-    const isMyTurn = gameState.players[gameState.turnIndex].id === user.uid;
-    const opponent = gameState.players.filter((p) => p.id !== user.uid);
+    // FIX: Guard against active player being undefined (e.g. during player leave/join events)
     const activePlayer = gameState.players[gameState.turnIndex];
+    if (!activePlayer) {
+      return (
+        <div className="text-white text-center mt-20">Syncing turn data...</div>
+      );
+    }
+
+    const isMyTurn = activePlayer.id === user.uid;
+    const opponent = gameState.players.filter((p) => p.id !== user.uid);
 
     const isStealing = gameState.turnPhase === "STEALING";
+
+    // NEW Feature: Check if Busted for Screen Shake
+    const isBusted = currentEvent && currentEvent.type === "BUST";
+
     // Prepare Steal Targets info if stealing
     let potentialTargets = [];
     if (isStealing && gameState.stealTargetIds) {
@@ -1242,10 +1426,35 @@ export default function FructoseFury() {
       )[0];
     }
 
+    // Check if all players are ready for next game (excluding host)
+    const allPlayersReady = gameState.players.every(
+      (p) => p.id === gameState.hostId || p.ready
+    );
+
     return (
-      <div className="h-screen bg-gray-950 text-white flex flex-col relative overflow-hidden">
+      <div
+        className={`h-screen bg-gray-950 text-white flex flex-col relative overflow-hidden transition-colors duration-100 ${
+          isBusted ? "animate-shake !bg-red-900" : ""
+        }`}
+      >
         <FloatingBackground />
-        <EventOverlay event={currentEvent} />
+        <EventOverlay event={currentEvent} currentUserId={user.uid} />
+
+        {/* Feature: Victim Modal */}
+        {victimEvent && (
+          <VictimModal
+            event={victimEvent}
+            onClose={() => setVictimEvent(null)}
+          />
+        )}
+
+        {/* Feature: Bank Success Modal */}
+        {bankSuccessData !== null && (
+          <BankSuccessModal
+            data={bankSuccessData}
+            onClose={() => setBankSuccessData(null)}
+          />
+        )}
 
         {/* Header */}
         <div className="h-14 bg-gray-900/90 border-b border-gray-800 flex items-center justify-between px-4 z-50 sticky top-0 backdrop-blur-md shrink-0">
@@ -1341,43 +1550,86 @@ export default function FructoseFury() {
               <span className="text-yellow-400 font-bold">{winner?.name}</span>{" "}
               with {calculateScore(winner?.bank || [])} points!
             </p>
-            <div className="grid grid-cols-2 gap-4 max-w-md w-full">
+            <div className="grid grid-cols-2 gap-4 max-w-md w-full mb-8">
               {gameState.players.map((p) => (
                 <div
                   key={p.id}
                   className="bg-gray-800 p-4 rounded-xl flex justify-between items-center border border-gray-700"
                 >
-                  <span
-                    className={
-                      p.id === winner.id
-                        ? "text-yellow-400 font-bold"
-                        : "text-gray-400"
-                    }
-                  >
-                    {p.name}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {p.ready && (
+                      <CheckCircle size={16} className="text-green-500" />
+                    )}
+                    <span
+                      className={
+                        p.id === winner.id
+                          ? "text-yellow-400 font-bold"
+                          : "text-gray-400"
+                      }
+                    >
+                      {p.name}
+                    </span>
+                  </div>
                   <span className="font-mono text-xl">
                     {calculateScore(p.bank || [])}
                   </span>
                 </div>
               ))}
             </div>
-            {gameState.hostId === user.uid && (
-              <div className="mt-8 flex gap-4">
-                <button
-                  onClick={resetToLobby}
-                  className="px-8 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold"
-                >
-                  Lobby
-                </button>
-                <button
-                  onClick={startGame}
-                  className="px-8 py-3 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-white shadow-lg"
-                >
-                  New Harvest
-                </button>
-              </div>
-            )}
+
+            {/* Feature: Ready Button Logic */}
+            <div className="flex flex-col gap-4 items-center w-full max-w-md">
+              {/* Only show Ready button to guests */}
+              {gameState.hostId !== user.uid &&
+                (!me.ready ? (
+                  <button
+                    onClick={toggleReady}
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-white shadow-lg animate-pulse"
+                  >
+                    Ready for Next Game
+                  </button>
+                ) : (
+                  <button
+                    onClick={toggleReady}
+                    className="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold text-green-400 border border-green-500/50"
+                  >
+                    Waiting for others...
+                  </button>
+                ))}
+
+              {gameState.hostId === user.uid && (
+                <div className="flex gap-4 w-full">
+                  <button
+                    onClick={resetToLobby}
+                    disabled={!allPlayersReady}
+                    className={`flex-1 py-3 rounded-xl font-bold transition-colors ${
+                      allPlayersReady
+                        ? "bg-gray-700 hover:bg-gray-600 text-white"
+                        : "bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700"
+                    }`}
+                  >
+                    Lobby
+                  </button>
+                  <button
+                    onClick={startGame}
+                    disabled={!allPlayersReady}
+                    className={`flex-1 py-3 rounded-xl font-bold text-white shadow-lg transition-all ${
+                      allPlayersReady
+                        ? "bg-green-600 hover:bg-green-500 hover:scale-105"
+                        : "bg-gray-800 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    New Harvest
+                  </button>
+                </div>
+              )}
+
+              {gameState.hostId === user.uid && !allPlayersReady && (
+                <p className="text-gray-500 text-sm">
+                  Wait for all farmers to ready up.
+                </p>
+              )}
+            </div>
           </div>
         )}
 
