@@ -174,7 +174,7 @@ const Logo = () => (
   <div className="flex items-center justify-center gap-1 opacity-40 mt-auto pb-2 pt-2 relative z-10">
     <Banana size={12} className="text-yellow-400" />
     <span className="text-[10px] font-black tracking-widest text-yellow-400 uppercase">
-      PIRATES
+      FRUCTOSE FURY
     </span>
   </div>
 );
