@@ -59,6 +59,7 @@ const firebaseConfig = {
   messagingSenderId: "586559578902",
   appId: "1:586559578902:web:c447da22d85544e16aa637",
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -169,6 +170,15 @@ Object.keys(FRUITS).forEach((type) => {
   }
 });
 
+const Logo = () => (
+  <div className="flex items-center justify-center gap-1 opacity-40 mt-auto pb-2 pt-2 relative z-10">
+    <Banana size={12} className="text-yellow-400" />
+    <span className="text-[10px] font-black tracking-widest text-yellow-400 uppercase">
+      PIRATES
+    </span>
+  </div>
+);
+
 // --- Helper Functions ---
 const shuffle = (array) => {
   let currentIndex = array.length,
@@ -247,7 +257,6 @@ const Card = ({ type, size = "md", animate = false }) => {
       : "w-20 h-28 md:w-24 md:h-32 p-2";
 
   const Icon = fruit.icon;
-
   return (
     <div
       className={`
@@ -281,7 +290,6 @@ const Card = ({ type, size = "md", animate = false }) => {
 
 const EventOverlay = ({ event, currentUserId }) => {
   if (!event) return null;
-
   // If I am the victim of a steal, show a specific modal instead of this generic one (handled by VictimModal)
   if (
     event.type === "STEAL" &&
@@ -304,7 +312,6 @@ const EventOverlay = ({ event, currentUserId }) => {
   let Icon = Info;
   let colorClass = "text-white";
   let bgClass = "bg-gray-800";
-
   if (event.type === "BUST") {
     Icon = Skull;
     colorClass = "text-red-500";
@@ -341,7 +348,6 @@ const VictimModal = ({ event, onClose }) => {
     const timer = setTimeout(onClose, 2500);
     return () => clearTimeout(timer);
   }, [onClose]);
-
   return (
     <div className="fixed inset-0 z-[210] flex items-center justify-center pointer-events-none animate-in fade-in zoom-in slide-in-from-top-5">
       <div className="bg-red-950/90 border-2 border-red-500 p-4 rounded-2xl max-w-xs w-full text-center shadow-2xl backdrop-blur-md">
@@ -373,7 +379,6 @@ const BankSuccessModal = ({ data, onClose }) => {
     const timer = setTimeout(onClose, 2500);
     return () => clearTimeout(timer);
   }, [onClose]);
-
   return (
     <div className="fixed inset-0 z-[210] flex items-center justify-center pointer-events-none animate-in fade-in zoom-in slide-in-from-top-5">
       <div className="bg-green-950/90 border-2 border-green-500 p-4 rounded-2xl max-w-xs w-full text-center shadow-2xl backdrop-blur-md">
@@ -620,6 +625,24 @@ export default function FructoseFury() {
   // Ref to track last processed event to avoid useEffect loop
   const lastProcessedEventId = useRef(null);
 
+  // --- Session Persistence Logic ---
+  // 1. Restore Room ID on mount
+  useEffect(() => {
+    const savedRoomId = localStorage.getItem("fructose_room_id");
+    if (savedRoomId) {
+      setRoomId(savedRoomId);
+    }
+  }, []);
+
+  // 2. Save Room ID when it changes
+  useEffect(() => {
+    if (roomId) {
+      localStorage.setItem("fructose_room_id", roomId);
+    } else {
+      localStorage.removeItem("fructose_room_id");
+    }
+  }, [roomId]);
+
   // --- Auth & Maintenance ---
   useEffect(() => {
     const initAuth = async () => {
@@ -655,6 +678,18 @@ export default function FructoseFury() {
       (snap) => {
         if (snap.exists()) {
           const data = snap.data();
+
+          // --- KICKED CHECK ---
+          // If I am not in the player list, I was kicked.
+          const amIInRoom = data.players.find((p) => p.id === user.uid);
+          if (!amIInRoom) {
+            setRoomId("");
+            setView("menu");
+            setError("You were kicked by the host.");
+            localStorage.removeItem("fructose_room_id");
+            return;
+          }
+
           setGameState(data);
 
           if (data.status === "playing" || data.status === "finished") {
@@ -665,19 +700,12 @@ export default function FructoseFury() {
 
           // Handle Events Popup
           if (data.lastEvent) {
-            // Fallback if timestamp is missing in legacy data, use ID as rough proxy or skip
-            // But we prefer explicit timestamps.
             if (data.lastEvent.id !== lastProcessedEventId.current) {
-              // Allow a larger window (10s) or check simply that ID changed.
-              // Using a timestamp check is good to prevent "replay" on page reload of old games,
-              // but we must ensure we write timestamps first.
-              // Assuming we fix writing timestamps, this check becomes robust.
               const evtTime = data.lastEvent.timestamp || Date.now();
               const isRecent = evtTime > Date.now() - 10000; // 10s window
 
               if (isRecent) {
                 lastProcessedEventId.current = data.lastEvent.id;
-
                 setCurrentEvent(data.lastEvent);
 
                 // Check if I am a victim
@@ -705,9 +733,11 @@ export default function FructoseFury() {
             }
           }
         } else {
+          // Room Deleted (Host Left)
           setRoomId("");
           setView("menu");
-          setError("The Fruit Stand has closed (Room deleted).");
+          setError("The Fruit Stand has closed (Host left).");
+          localStorage.removeItem("fructose_room_id");
         }
       }
     );
@@ -723,7 +753,6 @@ export default function FructoseFury() {
 
     // Initial Deck
     const deck = shuffle([...DECK_TEMPLATE]);
-
     const initialData = {
       roomId: newId,
       hostId: user.uid,
@@ -809,7 +838,6 @@ export default function FructoseFury() {
   const startGame = async () => {
     if (gameState.hostId !== user.uid) return;
     const deck = shuffle([...DECK_TEMPLATE]);
-
     // Reset readiness for next game inside game loop, or just clear it here
     const players = gameState.players.map((p) => ({
       ...p,
@@ -818,7 +846,6 @@ export default function FructoseFury() {
       table: [],
       bank: [],
     }));
-
     await updateDoc(
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
       {
@@ -849,7 +876,6 @@ export default function FructoseFury() {
       bank: [],
       ready: false,
     }));
-
     await updateDoc(
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
       {
@@ -865,25 +891,35 @@ export default function FructoseFury() {
 
   const leaveRoom = async () => {
     if (!roomId) return;
+
+    // Clear session immediately
+    localStorage.removeItem("fructose_room_id");
+
     const ref = doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId);
 
-    if (gameState.players.length <= 1) {
+    if (gameState.hostId === user.uid) {
+      // Host Exit: Delete the room. Listeners on other clients will handle the redirect.
       await deleteDoc(ref);
     } else {
-      const newPlayers = gameState.players.filter((p) => p.id !== user.uid);
-      let newStatus = gameState.status;
-      if (gameState.status === "playing" && newPlayers.length < 2) {
-        newStatus = "finished";
-      }
+      // Guest Exit
+      if (gameState.players.length <= 1) {
+        await deleteDoc(ref);
+      } else {
+        const newPlayers = gameState.players.filter((p) => p.id !== user.uid);
+        let newStatus = gameState.status;
+        if (gameState.status === "playing" && newPlayers.length < 2) {
+          newStatus = "finished";
+        }
 
-      await updateDoc(ref, {
-        players: newPlayers,
-        status: newStatus,
-        logs: arrayUnion({
-          text: `${playerName} left the game.`,
-          type: "danger",
-        }),
-      });
+        await updateDoc(ref, {
+          players: newPlayers,
+          status: newStatus,
+          logs: arrayUnion({
+            text: `${playerName} left the game.`,
+            type: "danger",
+          }),
+        });
+      }
     }
     setRoomId("");
     setView("menu");
@@ -899,7 +935,6 @@ export default function FructoseFury() {
     event = null
   ) => {
     let nextIdx = (gameState.turnIndex + 1) % currentPlayers.length;
-
     // Auto-Bank for the NEXT player (Move Table -> Bank)
     const nextPlayer = currentPlayers[nextIdx];
     let bankEvent = null;
@@ -914,7 +949,6 @@ export default function FructoseFury() {
         text: `${nextPlayer.name} banked ${bankedValue} points!`,
         type: "success",
       });
-
       // Create Event to notify everyone (especially the player who banked)
       bankEvent = {
         id: Date.now(),
@@ -979,7 +1013,6 @@ export default function FructoseFury() {
           type: "danger",
         },
       ];
-
       // We pass 'players' (unmodified hand) to the update so the UI keeps showing the hand during the "BUSTED" overlay
       await updateDoc(
         doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
@@ -992,13 +1025,13 @@ export default function FructoseFury() {
           turnPhase: "BUSTED", // Temporary phase to lock controls
         }
       );
-
       // Prepare wiped hand for the actual next turn state
       const nextPlayers = JSON.parse(JSON.stringify(players));
       nextPlayers[gameState.turnIndex].hand = [];
 
       setTimeout(() => nextTurn(nextPlayers, deck, [], null), 2500);
-      return; // Exit early
+      return;
+      // Exit early
     }
 
     // Priority 2: Check Steal Opportunity
@@ -1024,7 +1057,6 @@ export default function FructoseFury() {
     } else {
       // Priority 3: Safe Draw (No Steal, No Bust)
       me.hand.push(cardType);
-
       if (deck.length === 0) {
         await updateDoc(
           doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
@@ -1084,7 +1116,6 @@ export default function FructoseFury() {
           victimIds.push(targetId);
         }
       });
-
       logs.push({
         text: `${me.name} stole ${totalStolen} ${
           FRUITS[cardType].name
@@ -1109,7 +1140,6 @@ export default function FructoseFury() {
 
     // No Bust Check Here! Bust is only on Draw.
     // Just update state.
-
     if (gameState.deck.length === 0) {
       await updateDoc(
         doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
@@ -1140,7 +1170,6 @@ export default function FructoseFury() {
   const handleStop = async () => {
     const players = [...gameState.players];
     const me = players[gameState.turnIndex];
-
     const cardsCount = me.hand.length;
 
     // Move Hand -> Table (Danger Zone)
@@ -1149,7 +1178,6 @@ export default function FructoseFury() {
 
     // Removed immediate local modal as per user request
     // setBankSuccessCount(cardsCount);
-
     const logs = [{ text: `${me.name} stopped safely.`, type: "neutral" }];
     await nextTurn(players, gameState.deck, logs);
   };
@@ -1280,7 +1308,6 @@ export default function FructoseFury() {
 
   if (view === "lobby" && gameState) {
     const isHost = gameState.hostId === user.uid;
-
     return (
       <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6 relative">
         <FloatingBackground />
@@ -1377,6 +1404,7 @@ export default function FructoseFury() {
             isHost={isHost}
           />
         )}
+        <Logo />
       </div>
     );
   }
@@ -1388,7 +1416,6 @@ export default function FructoseFury() {
       return (
         <div className="text-white text-center mt-20">Syncing game data...</div>
       );
-
     // FIX: Guard against active player being undefined (e.g. during player leave/join events)
     const activePlayer = gameState.players[gameState.turnIndex];
     if (!activePlayer) {
@@ -1399,12 +1426,10 @@ export default function FructoseFury() {
 
     const isMyTurn = activePlayer.id === user.uid;
     const opponent = gameState.players.filter((p) => p.id !== user.uid);
-
     const isStealing = gameState.turnPhase === "STEALING";
 
     // NEW Feature: Check if Busted for Screen Shake
     const isBusted = currentEvent && currentEvent.type === "BUST";
-
     // Prepare Steal Targets info if stealing
     let potentialTargets = [];
     if (isStealing && gameState.stealTargetIds) {
@@ -1430,7 +1455,6 @@ export default function FructoseFury() {
     const allPlayersReady = gameState.players.every(
       (p) => p.id === gameState.hostId || p.ready
     );
-
     return (
       <div
         className={`h-screen bg-gray-950 text-white flex flex-col relative overflow-hidden transition-colors duration-100 ${
@@ -1832,6 +1856,7 @@ export default function FructoseFury() {
             </div>
           </div>
         </div>
+        <Logo />
       </div>
     );
   }
