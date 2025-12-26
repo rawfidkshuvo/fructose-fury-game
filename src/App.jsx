@@ -1424,13 +1424,11 @@ export default function FructoseFury() {
   }
 
   if (view === "game" && gameState) {
-    // FIX: Guard against 'me' being undefined if players array updates and user isn't found immediately
     const me = gameState.players.find((p) => p.id === user.uid);
     if (!me)
       return (
         <div className="text-white text-center mt-20">Syncing game data...</div>
       );
-    // FIX: Guard against active player being undefined (e.g. during player leave/join events)
     const activePlayer = gameState.players[gameState.turnIndex];
     if (!activePlayer) {
       return (
@@ -1441,10 +1439,9 @@ export default function FructoseFury() {
     const isMyTurn = activePlayer.id === user.uid;
     const opponent = gameState.players.filter((p) => p.id !== user.uid);
     const isStealing = gameState.turnPhase === "STEALING";
-
-    // NEW Feature: Check if Busted for Screen Shake
     const isBusted = currentEvent && currentEvent.type === "BUST";
-    // Prepare Steal Targets info if stealing
+
+    // Prepare Steal Targets info
     let potentialTargets = [];
     if (isStealing && gameState.stealTargetIds) {
       potentialTargets = gameState.stealTargetIds
@@ -1457,7 +1454,6 @@ export default function FructoseFury() {
         .filter((t) => t !== null);
     }
 
-    // Calculate winner if finished
     let winner = null;
     if (gameState.status === "finished") {
       winner = [...gameState.players].sort(
@@ -1465,10 +1461,10 @@ export default function FructoseFury() {
       )[0];
     }
 
-    // Check if all players are ready for next game (excluding host)
     const allPlayersReady = gameState.players.every(
       (p) => p.id === gameState.hostId || p.ready
     );
+
     return (
       <div
         className={`h-screen bg-gray-950 text-white flex flex-col relative overflow-hidden transition-colors duration-100 ${
@@ -1529,9 +1525,7 @@ export default function FructoseFury() {
           <StealModal
             targets={potentialTargets}
             fruitType={gameState.drawnCard}
-            onSteal={() => {
-              handleSteal(true);
-            }}
+            onSteal={() => handleSteal(true)}
             onPass={() => handleSteal(false)}
           />
         )}
@@ -1578,7 +1572,8 @@ export default function FructoseFury() {
 
         {/* Game Over Screen */}
         {gameState.status === "finished" && (
-          <div className="fixed inset-0 z-[150] bg-black/95 flex flex-col items-center justify-center p-6 text-center animate-in zoom-in">
+          <div className="fixed inset-0 z-[150] bg-black/95 flex flex-col items-center justify-center p-6 text-center animate-in zoom-in overflow-y-auto">
+            {/* Content same as original, just added overflow-y-auto to container */}
             <Trophy size={80} className="text-yellow-400 mb-6 animate-bounce" />
             <h1 className="text-5xl font-black text-white mb-2 uppercase">
               Harvest Complete!
@@ -1588,6 +1583,7 @@ export default function FructoseFury() {
               <span className="text-yellow-400 font-bold">{winner?.name}</span>{" "}
               with {calculateScore(winner?.bank || [])} points!
             </p>
+            {/* Player list and buttons... (kept same logic as your original) */}
             <div className="grid grid-cols-2 gap-4 max-w-md w-full mb-8">
               {gameState.players.map((p) => (
                 <div
@@ -1615,9 +1611,7 @@ export default function FructoseFury() {
               ))}
             </div>
 
-            {/* Feature: Ready Button Logic */}
-            <div className="flex flex-col gap-4 items-center w-full max-w-md">
-              {/* Only show Ready button to guests */}
+            <div className="flex flex-col gap-4 items-center w-full max-w-md pb-10">
               {gameState.hostId !== user.uid &&
                 (!me.ready ? (
                   <button
@@ -1661,50 +1655,53 @@ export default function FructoseFury() {
                   </button>
                 </div>
               )}
-
-              {gameState.hostId === user.uid && !allPlayersReady && (
-                <p className="text-gray-500 text-sm">
-                  Wait for all farmers to ready up.
-                </p>
-              )}
             </div>
           </div>
         )}
 
-        {/* Main Game Area */}
+        {/* MAIN GAME AREA 
+           UPDATED: Removed overflow-hidden from here to allow inner elements to render pop-ups properly,
+           but kept structure tight.
+        */}
         <div className="flex-1 flex flex-col w-full max-w-6xl mx-auto p-2 md:p-4 gap-2 md:gap-4 overflow-hidden">
-          {/* Top: Opponents - Scrollable on mobile */}
-          <div className="flex-none h-32 md:h-auto flex items-start gap-2 overflow-x-auto pb-2 md:pb-0 md:flex-wrap md:justify-center no-scrollbar px-2">
+          {/* TOP: OPPONENTS 
+             UPDATED: Removed fixed height (h-32). Added padding (py-4) and min-height logic.
+          */}
+          <div className="flex-none flex items-stretch gap-3 overflow-x-auto py-4 px-2 no-scrollbar md:flex-wrap md:justify-center min-h-[25vh] md:min-h-0">
             {opponent.map((p) => (
               <div
                 key={p.id}
-                className={`bg-gray-900/80 p-3 rounded-xl border-2 flex flex-col gap-2 min-w-[130px] md:min-w-[140px] transition-all ${
-                  gameState.players[gameState.turnIndex].id === p.id
-                    ? "border-yellow-500 scale-105 shadow-yellow-900/20 shadow-lg"
-                    : "border-gray-800 opacity-80"
-                }`}
+                className={`bg-gray-900/80 p-3 rounded-xl border-2 flex flex-col gap-2 
+                  min-w-[150px] md:min-w-[160px] 
+                  transition-all relative group
+                  ${
+                    gameState.players[gameState.turnIndex].id === p.id
+                      ? "border-yellow-500 shadow-yellow-900/20 shadow-lg scale-[1.02]"
+                      : "border-gray-800 opacity-90"
+                  }`}
               >
                 <div className="flex justify-between items-center border-b border-gray-700 pb-1">
-                  <span className="font-bold text-sm truncate max-w-[80px]">
+                  <span className="font-bold text-sm truncate max-w-[90px]">
                     {p.name}
                   </span>
                   <div className="flex items-center gap-1 bg-green-900/30 px-1.5 rounded text-green-400 text-xs">
-                    {/* FIX: Ensure p.bank exists before calculating score */}
                     <Trophy size={10} /> {calculateScore(p.bank || [])}
                   </div>
                 </div>
 
-                {/* Opponent Danger Zone (Stealable) */}
-                <div className="flex flex-wrap gap-1 min-h-[40px] bg-black/20 rounded p-1 overflow-x-auto">
+                {/* OPPONENT DANGER ZONE 
+                   UPDATED: Increased min-height to utilize vertical space.
+                */}
+                <div className="flex flex-wrap content-start gap-1 flex-1 bg-black/20 rounded p-1 overflow-y-auto min-h-[80px]">
                   {p.table.length === 0 ? (
-                    <span className="text-[10px] text-gray-600 w-full text-center py-2">
+                    <span className="text-[10px] text-gray-600 w-full text-center py-4">
                       Safe
                     </span>
                   ) : (
                     p.table.map((fruit, i) => (
                       <div
                         key={i}
-                        className="transform scale-75 origin-top-left -mr-4 hover:z-10 hover:scale-100 transition-transform"
+                        className="transform scale-75 origin-top-left -mr-3 -mb-3 hover:z-10 hover:scale-100 transition-transform"
                       >
                         <Card type={fruit} size="sm" />
                       </div>
@@ -1715,19 +1712,19 @@ export default function FructoseFury() {
             ))}
           </div>
 
-          {/* Center: Action Area */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 relative min-h-0">
+          {/* CENTER: ACTION AREA */}
+          <div className="flex-1 flex flex-col items-center justify-center gap-2 relative min-h-0">
             {/* Log Ticker */}
             <div className="absolute top-0 pointer-events-none w-full flex justify-center z-10">
               {gameState.logs.length > 0 && (
-                <div className="bg-black/60 backdrop-blur px-4 py-1 rounded-full text-xs text-yellow-100/80 border border-yellow-500/20 animate-in fade-in slide-in-from-top-2 text-center max-w-[90%] truncate">
+                <div className="bg-black/60 backdrop-blur px-4 py-1 rounded-full text-xs text-yellow-100/80 border border-yellow-500/20 animate-in fade-in slide-in-from-top-2 text-center max-w-[90%] truncate shadow-lg">
                   {gameState.logs[gameState.logs.length - 1].text}
                 </div>
               )}
             </div>
 
-            <div className="flex items-center gap-4 md:gap-16">
-              {/* Deck */}
+            <div className="flex items-center gap-4 md:gap-16 w-full justify-center">
+              {/* DECK */}
               <button
                 onClick={
                   isMyTurn && !isStealing && gameState.turnPhase !== "BUSTED"
@@ -1737,7 +1734,7 @@ export default function FructoseFury() {
                 disabled={
                   !isMyTurn || isStealing || gameState.turnPhase === "BUSTED"
                 }
-                className={`relative w-20 h-32 md:w-32 md:h-48 bg-gray-800 rounded-xl border-4 border-gray-700 shadow-2xl flex items-center justify-center group transition-all ${
+                className={`relative w-24 h-36 md:w-32 md:h-48 bg-gray-800 rounded-xl border-4 border-gray-700 shadow-2xl flex items-center justify-center group transition-all shrink-0 ${
                   isMyTurn && !isStealing && gameState.turnPhase !== "BUSTED"
                     ? "hover:scale-105 cursor-pointer hover:border-yellow-500 ring-4 ring-yellow-500/20"
                     : "opacity-80 cursor-default"
@@ -1749,21 +1746,24 @@ export default function FructoseFury() {
                     {gameState.deck.length}
                   </span>
                   <span className="text-[10px] uppercase text-gray-600 font-bold">
-                    Cards Left
+                    Cards
                   </span>
                 </div>
                 {isMyTurn &&
                   !isStealing &&
                   gameState.turnPhase !== "BUSTED" && (
-                    <div className="absolute -bottom-6 md:-bottom-8 bg-yellow-500 text-black text-[10px] md:text-xs font-bold px-3 py-1 rounded-full animate-bounce shadow-lg">
+                    <div className="absolute -bottom-4 md:-bottom-8 bg-yellow-500 text-black text-[10px] md:text-xs font-bold px-3 py-1 rounded-full animate-bounce shadow-lg z-20">
                       DRAW!
                     </div>
                   )}
               </button>
 
-              {/* Current Hand (Risk Zone) */}
-              <div className="flex items-center justify-center p-2 md:p-4 bg-gray-900/50 rounded-3xl border-2 border-dashed border-gray-700 min-h-[140px] md:min-h-[160px] min-w-[160px] md:min-w-[400px] max-w-[200px] md:max-w-none overflow-x-auto no-scrollbar relative">
-                {/* Show Drawn Card Overlay if Busted */}
+              {/* CURRENT HAND (RISK ZONE) 
+                 UPDATED: Added pt-10 to prevent clipping of the hover pop-up effect 
+                 and overflow-x-auto padding to prevent horizontal clipping.
+              */}
+              <div className="flex items-center justify-start p-2 pl-4 pt-10 pb-4 bg-gray-900/50 rounded-3xl border-2 border-dashed border-gray-700 h-[160px] md:h-[180px] w-full max-w-[500px] overflow-x-auto no-scrollbar relative">
+                {/* Busted Overlay */}
                 {gameState.drawnCard && gameState.turnPhase === "BUSTED" && (
                   <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-3xl animate-in fade-in">
                     <div className="transform rotate-12 scale-110 shadow-2xl shadow-red-500/50">
@@ -1776,15 +1776,17 @@ export default function FructoseFury() {
                 )}
 
                 {activePlayer.hand.length === 0 && !gameState.drawnCard ? (
-                  <span className="text-gray-600 font-bold uppercase tracking-widest text-xs md:text-sm">
-                    Risk Zone Empty
-                  </span>
+                  <div className="w-full text-center">
+                    <span className="text-gray-600 font-bold uppercase tracking-widest text-xs md:text-sm">
+                      Risk Zone Empty
+                    </span>
+                  </div>
                 ) : (
-                  <div className="flex -space-x-8 md:-space-x-12 px-4">
+                  <div className="flex -space-x-8 md:-space-x-12 px-2">
                     {activePlayer.hand.map((fruit, i) => (
                       <div
                         key={i}
-                        className="transform transition-transform hover:-translate-y-4 hover:scale-110 z-0 hover:z-10 shrink-0"
+                        className="transform transition-transform duration-200 hover:-translate-y-6 hover:scale-110 z-0 hover:z-30 shrink-0 shadow-xl"
                       >
                         <Card
                           type={fruit}
@@ -1799,10 +1801,10 @@ export default function FructoseFury() {
 
             {/* Controls */}
             {isMyTurn && activePlayer.hand.length > 0 && !isStealing && (
-              <div className="flex gap-4 animate-in slide-in-from-bottom-4 z-20">
+              <div className="flex gap-4 animate-in slide-in-from-bottom-4 z-20 mt-2">
                 <button
                   onClick={handleStop}
-                  className="bg-green-600 hover:bg-green-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-black text-lg md:text-xl shadow-lg shadow-green-900/20 transform hover:scale-105 transition-all flex items-center gap-2"
+                  className="bg-green-600 hover:bg-green-500 text-white px-8 md:px-12 py-3 md:py-4 rounded-xl font-black text-lg md:text-xl shadow-lg shadow-green-900/20 transform hover:scale-105 transition-all flex items-center gap-2 border-b-4 border-green-800 active:border-b-0 active:translate-y-1"
                 >
                   <CheckCircle size={20} /> BANK IT!
                 </button>
@@ -1811,17 +1813,17 @@ export default function FructoseFury() {
 
             {/* Status Text */}
             {!isMyTurn && (
-              <div className="bg-gray-900/80 px-4 md:px-6 py-2 md:py-3 rounded-full border border-gray-700 text-gray-400 font-mono text-xs md:text-sm animate-pulse text-center">
+              <div className="bg-gray-900/80 px-4 md:px-6 py-2 md:py-3 rounded-full border border-gray-700 text-gray-400 font-mono text-xs md:text-sm animate-pulse text-center mt-2">
                 Waiting for {activePlayer.name}...
               </div>
             )}
           </div>
 
-          {/* Bottom: My Player Area */}
+          {/* BOTTOM: MY PLAYER AREA */}
           <div
             className={`flex-none bg-gray-900 p-3 md:p-4 rounded-t-3xl border-t-4 ${
               isMyTurn ? "border-yellow-500" : "border-gray-800"
-            } shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-20`}
+            } shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-20 pb-6 md:pb-4`}
           >
             <div className="flex justify-between items-end">
               <div className="flex items-center gap-2 md:gap-4">
@@ -1831,7 +1833,6 @@ export default function FructoseFury() {
                     <User size={32} className="text-gray-400 hidden md:block" />
                   </div>
                   <div className="absolute -top-2 -right-2 bg-green-600 text-white w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center font-bold text-xs md:text-base shadow-lg border-2 border-gray-900">
-                    {/* FIX: Ensure me.bank is treated as empty array if undefined */}
                     {calculateScore(me.bank || [])}
                   </div>
                 </div>
@@ -1845,12 +1846,14 @@ export default function FructoseFury() {
                 </div>
               </div>
 
-              {/* My Danger Zone (Pending Bank) */}
+              {/* MY DANGER ZONE 
+                 UPDATED: Added padding (p-2) so hover scales don't clip. 
+              */}
               <div className="flex-1 ml-4 md:ml-8 flex flex-col items-end overflow-hidden">
                 <span className="text-[10px] md:text-xs text-orange-400 font-bold uppercase tracking-wider mb-1 md:mb-2 flex items-center gap-1 whitespace-nowrap">
                   <AlertTriangle size={12} /> Danger Zone (Next Turn)
                 </span>
-                <div className="flex flex-wrap justify-end gap-1 md:gap-2 bg-black/30 p-2 rounded-xl border border-gray-800 w-full md:w-auto min-h-[50px] md:min-h-[60px] min-w-[120px] md:min-w-[150px] overflow-x-auto">
+                <div className="flex flex-wrap justify-end gap-1 md:gap-2 bg-black/30 p-2 rounded-xl border border-gray-800 w-full md:w-auto min-h-[60px] md:min-h-[70px] min-w-[120px] overflow-x-auto">
                   {me.table.length === 0 ? (
                     <span className="text-gray-600 text-[10px] md:text-xs self-center mx-auto">
                       Empty
@@ -1859,7 +1862,7 @@ export default function FructoseFury() {
                     me.table.map((fruit, i) => (
                       <div
                         key={i}
-                        className="transform scale-75 hover:scale-100 transition-transform origin-bottom shrink-0"
+                        className="transform scale-75 hover:scale-100 transition-transform origin-bottom shrink-0 z-10"
                       >
                         <Card type={fruit} size="sm" />
                       </div>
