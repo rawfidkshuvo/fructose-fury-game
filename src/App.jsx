@@ -1660,12 +1660,12 @@ export default function FructoseFury() {
         )}
 
         {/* MAIN GAME AREA 
-           UPDATED: Removed overflow-hidden from here to allow inner elements to render pop-ups properly,
-           but kept structure tight.
+            UPDATED: Removed overflow-hidden from here to allow inner elements to render pop-ups properly,
+            but kept structure tight.
         */}
         <div className="flex-1 flex flex-col w-full max-w-6xl mx-auto p-2 md:p-4 gap-2 md:gap-4 overflow-hidden">
           {/* TOP: OPPONENTS 
-             UPDATED: Removed fixed height (h-32). Added padding (py-4) and min-height logic.
+              UPDATED: Removed fixed height (h-32). Added padding (py-4) and min-height logic.
           */}
           <div className="flex-none flex items-stretch gap-3 overflow-x-auto py-4 px-2 no-scrollbar md:flex-wrap md:justify-center min-h-[25vh] md:min-h-0">
             {opponent.map((p) => (
@@ -1690,9 +1690,9 @@ export default function FructoseFury() {
                 </div>
 
                 {/* OPPONENT DANGER ZONE 
-                   UPDATED: Increased min-height to utilize vertical space.
+                    UPDATED: Added max-h-[160px] to ensure scrolling when pile gets large.
                 */}
-                <div className="flex flex-wrap content-start gap-1 flex-1 bg-black/20 rounded p-1 overflow-y-auto min-h-[80px]">
+                <div className="flex flex-wrap content-start gap-1 flex-1 bg-black/20 rounded p-1 overflow-y-auto min-h-[80px] max-h-[160px]">
                   {p.table.length === 0 ? (
                     <span className="text-[10px] text-gray-600 w-full text-center py-4">
                       Safe
@@ -1759,8 +1759,8 @@ export default function FructoseFury() {
               </button>
 
               {/* CURRENT HAND (RISK ZONE) 
-                 UPDATED: Added pt-10 to prevent clipping of the hover pop-up effect 
-                 and overflow-x-auto padding to prevent horizontal clipping.
+                  UPDATED: Added pt-10 to prevent clipping of the hover pop-up effect 
+                  and overflow-x-auto padding to prevent horizontal clipping.
               */}
               <div className="flex items-center justify-start p-2 pl-4 pt-10 pb-4 bg-gray-900/50 rounded-3xl border-2 border-dashed border-gray-700 h-[160px] md:h-[180px] w-full max-w-[500px] overflow-x-auto no-scrollbar relative">
                 {/* Busted Overlay */}
@@ -1847,13 +1847,13 @@ export default function FructoseFury() {
               </div>
 
               {/* MY DANGER ZONE 
-                 UPDATED: Added padding (p-2) so hover scales don't clip. 
+                  UPDATED: Added max-h-[100px] and overflow-y-auto to allow scrolling for large piles
               */}
               <div className="flex-1 ml-4 md:ml-8 flex flex-col items-end overflow-hidden">
                 <span className="text-[10px] md:text-xs text-orange-400 font-bold uppercase tracking-wider mb-1 md:mb-2 flex items-center gap-1 whitespace-nowrap">
                   <AlertTriangle size={12} /> Danger Zone (Next Turn)
                 </span>
-                <div className="flex flex-wrap justify-end gap-1 md:gap-2 bg-black/30 p-2 rounded-xl border border-gray-800 w-full md:w-auto min-h-[60px] md:min-h-[70px] min-w-[120px] overflow-x-auto">
+                <div className="flex flex-wrap justify-end gap-1 md:gap-2 bg-black/30 p-2 rounded-xl border border-gray-800 w-full md:w-auto min-h-[60px] md:min-h-[70px] max-h-[100px] min-w-[120px] overflow-y-auto">
                   {me.table.length === 0 ? (
                     <span className="text-gray-600 text-[10px] md:text-xs self-center mx-auto">
                       Empty
