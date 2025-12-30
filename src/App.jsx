@@ -1491,7 +1491,7 @@ export default function FructoseFury() {
         )}
 
         {/* Header */}
-        <div className="h-14 bg-gray-900/90 border-b border-gray-800 flex items-center justify-between px-4 z-50 sticky top-0 backdrop-blur-md shrink-0">
+        <div className="h-14 bg-gray-900/90 border-b border-gray-800 flex items-center justify-between px-4 z-[160] sticky top-0 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-2">
             <Banana className="text-yellow-500" size={20} />
             <span className="font-black uppercase tracking-tight text-lg hidden md:block">
@@ -1542,7 +1542,7 @@ export default function FructoseFury() {
         )}
 
         {showLogHistory && (
-          <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+          <div className="fixed inset-0 top-14 z-[155] bg-black/90 flex items-center justify-center p-4">
             <div className="bg-gray-900 w-full max-w-md h-[70vh] rounded-2xl flex flex-col border border-gray-700">
               <div className="p-4 border-b border-gray-800 flex justify-between items-center">
                 <h3 className="font-bold">Log</h3>
@@ -1572,7 +1572,7 @@ export default function FructoseFury() {
 
         {/* Game Over Screen */}
         {gameState.status === "finished" && (
-          <div className="fixed inset-0 z-[150] bg-black/95 flex flex-col items-center justify-center p-6 text-center animate-in zoom-in overflow-y-auto">
+          <div className="fixed inset-0 top-14 z-[150] bg-black/95 flex flex-col items-center justify-center p-6 text-center animate-in zoom-in overflow-y-auto">
             {/* Content same as original, just added overflow-y-auto to container */}
             <Trophy size={80} className="text-yellow-400 mb-6 animate-bounce" />
             <h1 className="text-5xl font-black text-white mb-2 uppercase">
