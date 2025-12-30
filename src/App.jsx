@@ -1506,8 +1506,12 @@ export default function FructoseFury() {
               <BookOpen size={20} />
             </button>
             <button
-              onClick={() => setShowLogHistory(true)}
-              className="p-2 text-gray-400 hover:bg-gray-800 rounded-full"
+              onClick={() => setShowLogHistory(!showLogHistory)}
+              className={`p-2 rounded-full ${
+                showLogHistory
+                  ? "bg-yellow-900 text-yellow-400"
+                  : "text-gray-400 hover:bg-gray-800"
+              }`}
             >
               <History size={20} />
             </button>
@@ -1542,7 +1546,7 @@ export default function FructoseFury() {
         )}
 
         {showLogHistory && (
-          <div className="fixed inset-0 top-14 z-[155] bg-black/90 flex items-center justify-center p-4">
+          <div className="fixed top-16 right-4 w-64 max-h-60 bg-gray-900/95 border border-gray-700 rounded-xl z-[155] overflow-y-auto p-2 shadow-2xl">
             <div className="bg-gray-900 w-full max-w-md h-[70vh] rounded-2xl flex flex-col border border-gray-700">
               <div className="p-4 border-b border-gray-800 flex justify-between items-center">
                 <h3 className="font-bold">Log</h3>
