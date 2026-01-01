@@ -1680,7 +1680,7 @@ export default function FructoseFury() {
                   transition-all relative group
                   ${
                     gameState.players[gameState.turnIndex].id === p.id
-                      ? "border-yellow-500 shadow-yellow-900/20 shadow-lg scale-[1.02]"
+                      ? "border-yellow-500 shadow-yellow-900/20 shadow-lg scale-[1.02] animate-pulse"
                       : "border-gray-800 opacity-90"
                   }`}
               >
