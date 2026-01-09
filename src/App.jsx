@@ -179,6 +179,15 @@ const Logo = () => (
   </div>
 );
 
+const LogoBig = () => (
+  <div className="flex items-center justify-center gap-1 opacity-40 mt-auto pb-2 pt-2 relative z-10">
+    <Banana size={20} className="text-yellow-400" />
+    <span className="text-[20px] font-black tracking-widest text-yellow-400 uppercase">
+      FRUCTOSE FURY
+    </span>
+  </div>
+);
+
 // --- Helper Functions ---
 const shuffle = (array) => {
   let currentIndex = array.length,
@@ -508,7 +517,7 @@ const GameGuideModal = ({ onClose }) => (
     <div className="bg-gray-900 md:rounded-2xl w-full max-w-3xl h-full md:h-auto md:max-h-[90vh] overflow-hidden border border-yellow-500/30 flex flex-col">
       <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-950">
         <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 uppercase italic">
-          How to Play
+          Farming Guide
         </h2>
         <button
           onClick={onClose}
@@ -1297,7 +1306,7 @@ export default function FructoseFury() {
             onClick={() => setShowGuide(true)}
             className="w-full text-center text-gray-400 hover:text-white text-sm flex items-center justify-center gap-2"
           >
-            <BookOpen size={14} /> How to Play
+            <BookOpen size={14} /> Farming Guide
           </button>
         </div>
 
@@ -1325,6 +1334,7 @@ export default function FructoseFury() {
     return (
       <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6 relative">
         <FloatingBackground />
+        <LogoBig />
 
         <div className="z-10 w-full max-w-lg bg-gray-900/90 backdrop-blur p-8 rounded-2xl border border-orange-500/30 shadow-2xl">
           <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-800">
