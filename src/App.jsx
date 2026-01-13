@@ -1002,6 +1002,8 @@ export default function FructoseFury() {
     const players = [...gameState.players];
     const deck = [...gameState.deck];
     const me = players[gameState.turnIndex];
+    // FIX: Safety Check. If turnIndex is invalid, stop immediately.
+    if (!me) return;
     const cardType = deck.pop();
 
     // Priority 1: Check Bust FIRST
@@ -1689,7 +1691,7 @@ export default function FructoseFury() {
                   min-w-[150px] md:min-w-[160px] 
                   transition-all relative group
                   ${
-                    gameState.players[gameState.turnIndex].id === p.id
+                    gameState.players[gameState.turnIndex]?.id === p.id
                       ? "border-yellow-500 shadow-yellow-900/20 shadow-lg scale-[1.02] animate-pulse"
                       : "border-gray-800 opacity-90"
                   }`}
