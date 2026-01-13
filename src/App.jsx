@@ -907,27 +907,66 @@ export default function FructoseFury() {
     const ref = doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId);
 
     if (gameState.hostId === user.uid) {
-      // Host Exit: Delete the room. Listeners on other clients will handle the redirect.
+      // Host Exit: Delete the room.
       await deleteDoc(ref);
     } else {
       // Guest Exit
       if (gameState.players.length <= 1) {
         await deleteDoc(ref);
       } else {
+        // 1. Calculate the new player list
+        const leavingPlayerIndex = gameState.players.findIndex(
+          (p) => p.id === user.uid
+        );
         const newPlayers = gameState.players.filter((p) => p.id !== user.uid);
+
+        // 2. Calculate new Turn Index
+        let newTurnIndex = gameState.turnIndex;
+        let shouldResetPhase = false;
+
+        if (leavingPlayerIndex < gameState.turnIndex) {
+          // If the person who left was BEFORE the current turn, shift index down
+          newTurnIndex = Math.max(0, gameState.turnIndex - 1);
+        } else if (leavingPlayerIndex === gameState.turnIndex) {
+          // If the ACTIVE player left, the turn passes to the person who slid into this slot
+          // We must reset the phase so the new player doesn't inherit "STEALING" or "BUSTED" state
+          shouldResetPhase = true;
+        }
+
+        // Ensure index wraps correctly if we were at the end of the list
+        if (newPlayers.length > 0) {
+          if (newTurnIndex >= newPlayers.length) {
+            newTurnIndex = 0;
+          }
+        } else {
+          newTurnIndex = 0;
+        }
+
+        // 3. Determine Game Status
         let newStatus = gameState.status;
         if (gameState.status === "playing" && newPlayers.length < 2) {
           newStatus = "finished";
         }
 
-        await updateDoc(ref, {
+        // 4. Construct Update Data
+        const updateData = {
           players: newPlayers,
           status: newStatus,
+          turnIndex: newTurnIndex, // UPDATE TURN INDEX
           logs: arrayUnion({
             text: `${playerName} left the game.`,
             type: "danger",
           }),
-        });
+        };
+
+        // If the active player left, clean up the turn state for the next person
+        if (shouldResetPhase) {
+          updateData.turnPhase = "DRAWING";
+          updateData.drawnCard = null;
+          updateData.stealTargetIds = [];
+        }
+
+        await updateDoc(ref, updateData);
       }
     }
     setRoomId("");
@@ -1002,8 +1041,6 @@ export default function FructoseFury() {
     const players = [...gameState.players];
     const deck = [...gameState.deck];
     const me = players[gameState.turnIndex];
-    // FIX: Safety Check. If turnIndex is invalid, stop immediately.
-    if (!me) return;
     const cardType = deck.pop();
 
     // Priority 1: Check Bust FIRST
@@ -1691,7 +1728,7 @@ export default function FructoseFury() {
                   min-w-[150px] md:min-w-[160px] 
                   transition-all relative group
                   ${
-                    gameState.players[gameState.turnIndex]?.id === p.id
+                    gameState.players[gameState.turnIndex].id === p.id
                       ? "border-yellow-500 shadow-yellow-900/20 shadow-lg scale-[1.02] animate-pulse"
                       : "border-gray-800 opacity-90"
                   }`}
