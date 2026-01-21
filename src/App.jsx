@@ -512,6 +512,100 @@ const LeaveConfirmModal = ({
   </div>
 );
 
+const GameSummaryModal = ({ players, destroyedCards, onClose }) => {
+  return (
+    <div className="fixed inset-0 z-[250] bg-black/95 flex items-center justify-center p-4 animate-in fade-in zoom-in duration-300">
+      <div className="bg-gray-900 border-2 border-yellow-600 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden relative">
+        
+        {/* Header */}
+        <div className="p-6 bg-gray-950 border-b border-gray-800 flex justify-between items-center shrink-0">
+          <div>
+            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 uppercase italic">
+              Harvest Report
+            </h2>
+            <p className="text-gray-400 text-sm font-bold">
+              All cards collected and destroyed
+            </p>
+          </div>
+          <button 
+            onClick={onClose}
+            className="bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-full transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+          
+          {/* 1. Destroyed Cards Section */}
+          <div className="bg-red-950/30 rounded-2xl p-4 border border-red-900/50">
+            <div className="flex items-center gap-2 mb-4 text-red-400">
+              <Trash2 size={24} />
+              <h3 className="text-xl font-bold uppercase">Rotten Fruit (Destroyed)</h3>
+              <span className="bg-red-900/50 px-2 py-0.5 rounded text-xs text-red-200">
+                {destroyedCards?.length || 0} Cards
+              </span>
+            </div>
+            
+            {(!destroyedCards || destroyedCards.length === 0) ? (
+              <p className="text-gray-500 italic text-sm">No fruits were harmed in this game.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {destroyedCards.sort().map((type, i) => (
+                  <div key={i} className="transform scale-75 origin-top-left -mr-4 -mb-4">
+                    <Card type={type} size="sm" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 2. Player Collections Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {players.map(p => (
+              <div key={p.id} className="bg-gray-800/50 rounded-2xl p-4 border border-gray-700">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="font-bold text-yellow-500 text-lg flex items-center gap-2">
+                    <User size={18} /> {p.name}
+                  </span>
+                  <span className="text-white font-mono font-bold bg-gray-900 px-2 py-1 rounded">
+                    Score: {calculateScore(p.bank)}
+                  </span>
+                </div>
+                
+                <div className="flex flex-wrap gap-1 min-h-[60px] content-start bg-black/20 p-2 rounded-xl">
+                  {p.bank && p.bank.length > 0 ? (
+                    p.bank.sort().map((type, i) => (
+                      <div key={i} className="transform scale-75 origin-top-left -mr-3 -mb-3">
+                         <Card type={type} size="sm" />
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-gray-600 text-xs italic w-full text-center py-2">Empty Basket</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 bg-gray-950 border-t border-gray-800 shrink-0 flex justify-center">
+            <button 
+                onClick={onClose}
+                className="bg-yellow-600 hover:bg-yellow-500 text-black font-black text-xl py-3 px-12 rounded-xl shadow-lg hover:scale-105 transition-transform"
+            >
+                SEE WINNER
+            </button>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
 const GameGuideModal = ({ onClose }) => (
   <div className="fixed inset-0 bg-black/95 z-[150] flex items-center justify-center p-0 md:p-4">
     <div className="bg-gray-900 md:rounded-2xl w-full max-w-3xl h-full md:h-auto md:max-h-[90vh] overflow-hidden border border-yellow-500/30 flex flex-col">
@@ -626,6 +720,7 @@ export default function FructoseFury() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showLogHistory, setShowLogHistory] = useState(false);
   const [currentEvent, setCurrentEvent] = useState(null); // For popup
+  const [showSummary, setShowSummary] = useState(false);
 
   // New Local States for Features
   const [bankSuccessData, setBankSuccessData] = useState(null); // Shows modal if not null
@@ -642,6 +737,13 @@ export default function FructoseFury() {
       setRoomId(savedRoomId);
     }
   }, []);
+
+  //game summary modal trigger
+  useEffect(() => {
+    if (gameState?.status === "finished") {
+      setShowSummary(true);
+    }
+  }, [gameState?.status]);
 
   // 2. Save Room ID when it changes
   useEffect(() => {
@@ -780,6 +882,7 @@ export default function FructoseFury() {
       turnIndex: 0,
       turnPhase: "IDLE", // IDLE, DRAWING, STEALING
       stealTargetIds: [], // Now array for multiple targets
+      destroyedCards: [],
       drawnCard: null, // The card just drawn
       lastEvent: null, // For popups
       logs: [],
@@ -1057,6 +1160,8 @@ export default function FructoseFury() {
 
     // Priority 1: Check Bust FIRST
     if (checkBust(me.hand, cardType)) {
+      // --- NEW: Capture the destroyed cards (Hand + The drawn card) ---
+      const bustedCards = [...me.hand, cardType];
       // BUST LOGIC
       const event = {
         id: Date.now(),
@@ -1088,6 +1193,7 @@ export default function FructoseFury() {
             deck,
             status: "finished",
             lastEvent: event,
+            destroyedCards: arrayUnion(...bustedCards), // <--- SAVE DESTROYED
             logs: arrayUnion(...logs, {
               text: "Deck Empty on a Bust! Game Over!",
               type: "neutral",
@@ -1106,6 +1212,7 @@ export default function FructoseFury() {
           players, // Keep hand visual for the "BUSTED" overlay
           deck,
           lastEvent: event,
+          destroyedCards: arrayUnion(...bustedCards), // <--- SAVE DESTROYED
           logs: arrayUnion(...logs),
           drawnCard: cardType,
           turnPhase: "BUSTED",
@@ -1662,6 +1769,15 @@ export default function FructoseFury() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* NEW: Game Summary Modal */}
+        {showSummary && (
+          <GameSummaryModal 
+            players={gameState.players} 
+            destroyedCards={gameState.destroyedCards || []} 
+            onClose={() => setShowSummary(false)} 
+          />
         )}
 
         {/* Game Over Screen */}
