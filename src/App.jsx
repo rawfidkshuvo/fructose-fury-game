@@ -1152,17 +1152,21 @@ export default function FructoseFury() {
   const handleDraw = async () => {
     if (gameState.deck.length === 0) return;
 
-    const players = [...gameState.players]; // Copy players
-    // We clone the deck so we can pop from it
+    const players = [...gameState.players];
     const deck = [...gameState.deck];
     const me = players[gameState.turnIndex];
     const cardType = deck.pop();
 
     // Priority 1: Check Bust FIRST
     if (checkBust(me.hand, cardType)) {
-      // --- NEW: Capture the destroyed cards (Hand + The drawn card) ---
+      // 1. Identify what is being destroyed
       const bustedCards = [...me.hand, cardType];
-      // BUST LOGIC
+
+      // 2. FIX: Calculate the new total list locally to PRESERVE DUPLICATES
+      // (arrayUnion would remove duplicates, which we don't want here)
+      const currentDestroyed = gameState.destroyedCards || [];
+      const updatedDestroyedCards = [...currentDestroyed, ...bustedCards];
+
       const event = {
         id: Date.now(),
         timestamp: Date.now(),
@@ -1170,6 +1174,7 @@ export default function FructoseFury() {
         title: "BUSTED!",
         message: `${me.name} got greedy!`,
       };
+
       const logs = [
         {
           text: `${me.name} drew ${FRUITS[cardType].name} and BUSTED!`,
@@ -1177,15 +1182,11 @@ export default function FructoseFury() {
         },
       ];
 
-      // --- NEW: Check if this was the last card ---
+      // CASE A: Deck is empty AND player busted (Game Over)
       if (deck.length === 0) {
-        // 1. The player loses their hand (Bust consequence)
         me.hand = []; 
-        
-        // 2. Finalize: Move everyone else's Table/Hand to Bank
         const finalPlayers = finalizePlayers(players);
 
-        // 3. End Game Immediately
         await updateDoc(
           doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
           {
@@ -1193,7 +1194,7 @@ export default function FructoseFury() {
             deck,
             status: "finished",
             lastEvent: event,
-            destroyedCards: arrayUnion(...bustedCards), // <--- SAVE DESTROYED
+            destroyedCards: updatedDestroyedCards, // Save the full list
             logs: arrayUnion(...logs, {
               text: "Deck Empty on a Bust! Game Over!",
               type: "neutral",
@@ -1202,17 +1203,17 @@ export default function FructoseFury() {
             turnPhase: "BUSTED", 
           }
         );
-        return; // Stop here, do not trigger nextTurn
+        return; 
       }
       
-      // Standard Bust (Game continues)
+      // CASE B: Standard Bust (Game Continues)
       await updateDoc(
         doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
         {
-          players, // Keep hand visual for the "BUSTED" overlay
+          players, 
           deck,
           lastEvent: event,
-          destroyedCards: arrayUnion(...bustedCards), // <--- SAVE DESTROYED
+          destroyedCards: updatedDestroyedCards, // Save the full list
           logs: arrayUnion(...logs),
           drawnCard: cardType,
           turnPhase: "BUSTED",
@@ -1250,9 +1251,8 @@ export default function FructoseFury() {
       // Priority 3: Safe Draw (No Steal, No Bust)
       me.hand.push(cardType);
 
-      // --- NEW: Check if this was the last card ---
       if (deck.length === 0) {
-        // Secure all points for everyone (Hand + Table -> Bank)
+        // Secure all points for everyone
         const finalPlayers = finalizePlayers(players);
 
         await updateDoc(
