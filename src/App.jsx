@@ -973,6 +973,7 @@ export default function FructoseFury() {
           },
         ],
         stealTargetIds: [],
+        destroyedCards: [], // <--- RESET THIS
         drawnCard: null,
         lastEvent: null,
       }
@@ -996,6 +997,7 @@ export default function FructoseFury() {
         deck: shuffle([...DECK_TEMPLATE]),
         logs: [],
         turnIndex: 0,
+        destroyedCards: [], // <--- RESET THIS
       }
     );
     setShowLeaveConfirm(false);
