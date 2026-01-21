@@ -1035,22 +1035,32 @@ export default function FructoseFury() {
     return hand.includes(newCard);
   };
 
+  // --- New Helper: Finalize Game State ---
+  // Moves everyone's Hands and Tables to their Bank for final scoring
+  const finalizePlayers = (currentPlayers) => {
+    return currentPlayers.map((p) => ({
+      ...p,
+      bank: [...p.bank, ...p.table, ...p.hand], // Secure everything
+      table: [],
+      hand: [],
+    }));
+  };
+
   const handleDraw = async () => {
     if (gameState.deck.length === 0) return;
 
-    const players = [...gameState.players];
+    const players = [...gameState.players]; // Copy players
+    // We clone the deck so we can pop from it
     const deck = [...gameState.deck];
     const me = players[gameState.turnIndex];
     const cardType = deck.pop();
 
     // Priority 1: Check Bust FIRST
-    // If player has 3+ cards and draws a matching card, they bust immediately.
-    // They do NOT get the option to steal if they are already busting.
     if (checkBust(me.hand, cardType)) {
       // BUST LOGIC
       const event = {
         id: Date.now(),
-        timestamp: Date.now(), // Added explicit timestamp
+        timestamp: Date.now(),
         type: "BUST",
         title: "BUSTED!",
         message: `${me.name} got greedy!`,
@@ -1061,29 +1071,56 @@ export default function FructoseFury() {
           type: "danger",
         },
       ];
-      // We pass 'players' (unmodified hand) to the update so the UI keeps showing the hand during the "BUSTED" overlay
+
+      // --- NEW: Check if this was the last card ---
+      if (deck.length === 0) {
+        // 1. The player loses their hand (Bust consequence)
+        me.hand = []; 
+        
+        // 2. Finalize: Move everyone else's Table/Hand to Bank
+        const finalPlayers = finalizePlayers(players);
+
+        // 3. End Game Immediately
+        await updateDoc(
+          doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
+          {
+            players: finalPlayers,
+            deck,
+            status: "finished",
+            lastEvent: event,
+            logs: arrayUnion(...logs, {
+              text: "Deck Empty on a Bust! Game Over!",
+              type: "neutral",
+            }),
+            drawnCard: cardType,
+            turnPhase: "BUSTED", 
+          }
+        );
+        return; // Stop here, do not trigger nextTurn
+      }
+      
+      // Standard Bust (Game continues)
       await updateDoc(
         doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
         {
-          players, // Hand intact for visual context
+          players, // Keep hand visual for the "BUSTED" overlay
           deck,
           lastEvent: event,
           logs: arrayUnion(...logs),
           drawnCard: cardType,
-          turnPhase: "BUSTED", // Temporary phase to lock controls
+          turnPhase: "BUSTED",
         }
       );
+
       // Prepare wiped hand for the actual next turn state
       const nextPlayers = JSON.parse(JSON.stringify(players));
       nextPlayers[gameState.turnIndex].hand = [];
 
       setTimeout(() => nextTurn(nextPlayers, deck, [], null), 2500);
       return;
-      // Exit early
     }
 
     // Priority 2: Check Steal Opportunity
-    // Only if they survived the bust check do we check for steals.
     const stealTargetIds = [];
     for (let p of players) {
       if (p.id !== me.id && p.table.includes(cardType)) {
@@ -1105,11 +1142,16 @@ export default function FructoseFury() {
     } else {
       // Priority 3: Safe Draw (No Steal, No Bust)
       me.hand.push(cardType);
+
+      // --- NEW: Check if this was the last card ---
       if (deck.length === 0) {
+        // Secure all points for everyone (Hand + Table -> Bank)
+        const finalPlayers = finalizePlayers(players);
+
         await updateDoc(
           doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
           {
-            players,
+            players: finalPlayers,
             deck,
             status: "finished",
             logs: arrayUnion({
@@ -1119,6 +1161,7 @@ export default function FructoseFury() {
           }
         );
       } else {
+        // Game Continues
         await updateDoc(
           doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
           {
@@ -1139,11 +1182,10 @@ export default function FructoseFury() {
     const logs = [];
     let event = null;
 
-    // Start with adding the drawn card (the one that triggered the steal option)
+    // Start with adding the drawn card
     me.hand.push(cardType);
 
     if (doSteal) {
-      // Steal from ALL identified targets
       let totalStolen = 0;
       const targetNames = [];
       const victimIds = [];
@@ -1165,34 +1207,32 @@ export default function FructoseFury() {
         }
       });
       logs.push({
-        text: `${me.name} stole ${totalStolen} ${
-          FRUITS[cardType].name
-        }(s) from ${targetNames.join(", ")}!`,
+        text: `${me.name} stole ${totalStolen} ${FRUITS[cardType].name}(s) from ${targetNames.join(", ")}!`,
         type: "warning",
       });
       event = {
         id: Date.now(),
-        timestamp: Date.now(), // Added explicit timestamp
+        timestamp: Date.now(),
         type: "STEAL",
         title: "THIEF!",
-        message: `${
-          me.name
-        } stole ${totalStolen} fruits from ${targetNames.join(", ")}!`,
-        targetIds: victimIds, // NEW: Add victims to event
-        thiefId: me.id, // NEW: Identify thief
-        cardType: cardType, // NEW: Identify card stolen
+        message: `${me.name} stole ${totalStolen} fruits from ${targetNames.join(", ")}!`,
+        targetIds: victimIds,
+        thiefId: me.id,
+        cardType: cardType,
       };
     } else {
       logs.push({ text: `${me.name} passed on stealing.`, type: "neutral" });
     }
 
-    // No Bust Check Here! Bust is only on Draw.
-    // Just update state.
+    // --- NEW: Check if deck is empty after the action ---
     if (gameState.deck.length === 0) {
+      // Secure all points (Hand + Table -> Bank)
+      const finalPlayers = finalizePlayers(players);
+
       await updateDoc(
         doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
         {
-          players,
+          players: finalPlayers,
           status: "finished",
           logs: arrayUnion(...logs, {
             text: "Deck Empty! Game Over!",
@@ -1201,6 +1241,7 @@ export default function FructoseFury() {
         }
       );
     } else {
+      // Continue Game
       await updateDoc(
         doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
         {
