@@ -707,7 +707,9 @@ const GameGuideModal = ({ onClose }) => (
 export default function FructoseFury() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState("menu");
-  const [playerName, setPlayerName] = useState("");
+  const [playerName, setPlayerName] = useState(
+    () => localStorage.getItem("fructosefury_playerName") || ""
+  );
   const [roomId, setRoomId] = useState("");
   const [roomCodeInput, setRoomCodeInput] = useState("");
   const [gameState, setGameState] = useState(null);
@@ -737,6 +739,10 @@ export default function FructoseFury() {
       setRoomId(savedRoomId);
     }
   }, []);
+
+  useEffect(() => {
+    if (playerName) localStorage.setItem("fructosefury_playerName", playerName);
+  }, [playerName]);
 
   //game summary modal trigger
   useEffect(() => {
