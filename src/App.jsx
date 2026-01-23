@@ -707,9 +707,7 @@ const GameGuideModal = ({ onClose }) => (
 export default function FructoseFury() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState("menu");
-  const [playerName, setPlayerName] = useState(
-    () => localStorage.getItem("fructosefury_playerName") || ""
-  );
+  
   const [roomId, setRoomId] = useState("");
   const [roomCodeInput, setRoomCodeInput] = useState("");
   const [gameState, setGameState] = useState(null);
@@ -728,6 +726,15 @@ export default function FructoseFury() {
   const [bankSuccessData, setBankSuccessData] = useState(null); // Shows modal if not null
   const [victimEvent, setVictimEvent] = useState(null); // Shows modal if user was robbed
 
+  //read and fill global name
+  const [playerName, setPlayerName] = useState(
+    () => localStorage.getItem("gameHub_playerName") || ""
+  );
+  //set global name for all game
+  useEffect(() => {
+    if (playerName) localStorage.setItem("gameHub_playerName", playerName);
+  }, [playerName]);
+  
   // Ref to track last processed event to avoid useEffect loop
   const lastProcessedEventId = useRef(null);
 
@@ -740,9 +747,7 @@ export default function FructoseFury() {
     }
   }, []);
 
-  useEffect(() => {
-    if (playerName) localStorage.setItem("fructosefury_playerName", playerName);
-  }, [playerName]);
+  
 
   //game summary modal trigger
   useEffect(() => {
