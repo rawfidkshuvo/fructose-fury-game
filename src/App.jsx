@@ -216,7 +216,7 @@ const FloatingBackground = ({ isShaking }) => (
       isShaking ? "animate-shake bg-red-900/20" : ""
     }`}
   >
-    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-900/20 via-gray-950 to-black" />
+    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-yellow-900/20 via-gray-950 to-black" />
     <div className="absolute top-0 left-0 w-full h-full opacity-10">
       {[...Array(20)].map((_, i) => {
         const fruitKeys = Object.keys(FRUITS);
@@ -336,7 +336,7 @@ const EventOverlay = ({ event, currentUserId }) => {
   }
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[200] flex items-center justify-center p-4">
+    <div className="fixed inset-0 pointer-events-none z-200 flex items-center justify-center p-4">
       <div
         className={`p-6 md:p-8 rounded-3xl ${bgClass} border-4 border-white/20 shadow-2xl flex flex-col items-center animate-in zoom-in fade-in duration-300 transform scale-110 max-w-sm w-full text-center`}
       >
@@ -358,7 +358,7 @@ const VictimModal = ({ event, onClose }) => {
     return () => clearTimeout(timer);
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-[210] flex items-center justify-center pointer-events-none animate-in fade-in zoom-in slide-in-from-top-5">
+    <div className="fixed inset-0 z-210 flex items-center justify-center pointer-events-none animate-in fade-in zoom-in slide-in-from-top-5">
       <div className="bg-red-950/90 border-2 border-red-500 p-4 rounded-2xl max-w-xs w-full text-center shadow-2xl backdrop-blur-md">
         <div className="flex items-center justify-center gap-2 mb-2">
           <AlertTriangle size={32} className="text-red-500 animate-pulse" />
@@ -389,7 +389,7 @@ const BankSuccessModal = ({ data, onClose }) => {
     return () => clearTimeout(timer);
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-[210] flex items-center justify-center pointer-events-none animate-in fade-in zoom-in slide-in-from-top-5">
+    <div className="fixed inset-0 z-210 flex items-center justify-center pointer-events-none animate-in fade-in zoom-in slide-in-from-top-5">
       <div className="bg-green-950/90 border-2 border-green-500 p-4 rounded-2xl max-w-xs w-full text-center shadow-2xl backdrop-blur-md">
         <div className="flex items-center justify-center gap-2 mb-2">
           <ShieldCheck size={32} className="text-green-400 animate-bounce" />
@@ -418,7 +418,7 @@ const BankSuccessModal = ({ data, onClose }) => {
 };
 
 const StealModal = ({ targets, fruitType, onSteal, onPass }) => (
-  <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 animate-in fade-in">
+  <div className="fixed inset-0 bg-black/90 z-100 flex items-center justify-center p-4 animate-in fade-in">
     <div className="bg-gray-800 rounded-2xl border-4 border-yellow-500 p-4 md:p-6 max-w-md w-full text-center shadow-[0_0_50px_rgba(234,179,8,0.3)] relative overflow-hidden flex flex-col max-h-[90vh]">
       <div className="absolute inset-0 bg-yellow-500/10 animate-pulse pointer-events-none" />
       <div className="relative z-10 flex flex-col h-full">
@@ -460,7 +460,7 @@ const StealModal = ({ targets, fruitType, onSteal, onPass }) => (
           </button>
           <button
             onClick={onSteal}
-            className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3 rounded-xl font-black text-sm md:text-xl shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2"
+            className="bg-linear-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3 rounded-xl font-black text-sm md:text-xl shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2"
           >
             <Hand size={18} /> STEAL ALL!
           </button>
@@ -476,7 +476,7 @@ const LeaveConfirmModal = ({
   isHost,
   onReturnToLobby,
 }) => (
-  <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 animate-in fade-in">
+  <div className="fixed inset-0 bg-black/90 z-200 flex items-center justify-center p-4 animate-in fade-in">
     <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 max-w-sm w-full text-center shadow-2xl">
       <h3 className="text-xl font-bold text-white mb-2">
         Abandon the Harvest?
@@ -514,13 +514,13 @@ const LeaveConfirmModal = ({
 
 const GameSummaryModal = ({ players, destroyedCards, onClose }) => {
   return (
-    <div className="fixed inset-0 z-[250] bg-black/95 flex items-center justify-center p-4 animate-in fade-in zoom-in duration-300">
+    <div className="fixed inset-0 z-250 bg-black/95 flex items-center justify-center p-4 animate-in fade-in zoom-in duration-300">
       <div className="bg-gray-900 border-2 border-yellow-600 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden relative">
         
         {/* Header */}
         <div className="p-6 bg-gray-950 border-b border-gray-800 flex justify-between items-center shrink-0">
           <div>
-            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 uppercase italic">
+            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-linear-to-r from-yellow-400 to-orange-500 uppercase italic">
               Harvest Report
             </h2>
             <p className="text-gray-400 text-sm font-bold">
@@ -607,10 +607,10 @@ const GameSummaryModal = ({ players, destroyedCards, onClose }) => {
 };
 
 const GameGuideModal = ({ onClose }) => (
-  <div className="fixed inset-0 bg-black/95 z-[150] flex items-center justify-center p-0 md:p-4">
+  <div className="fixed inset-0 bg-black/95 z-150 flex items-center justify-center p-0 md:p-4">
     <div className="bg-gray-900 md:rounded-2xl w-full max-w-3xl h-full md:h-auto md:max-h-[90vh] overflow-hidden border border-yellow-500/30 flex flex-col">
       <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-950">
-        <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 uppercase italic">
+        <h2 className="text-2xl font-black text-transparent bg-clip-text bg-linear-to-r from-yellow-400 to-orange-500 uppercase italic">
           Farming Guide
         </h2>
         <button
@@ -1458,7 +1458,7 @@ export default function FructoseFury() {
             <Banana size={48} className="text-yellow-400" />
             <Cherry size={48} className="text-red-500" />
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 font-serif tracking-tight drop-shadow-xl italic transform -rotate-2">
+          <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-linear-to-r from-yellow-400 via-orange-500 to-red-500 font-serif tracking-tight drop-shadow-xl italic transform -rotate-2">
             FRUCTOSE FURY
           </h1>
           <p className="text-white/60 tracking-[0.5em] uppercase mt-4 text-sm font-bold">
@@ -1481,7 +1481,7 @@ export default function FructoseFury() {
           <button
             onClick={createRoom}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 p-4 rounded-xl font-bold mb-4 flex items-center justify-center gap-2 shadow-lg transform hover:scale-105 transition-all text-white"
+            className="w-full bg-linear-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 p-4 rounded-xl font-bold mb-4 flex items-center justify-center gap-2 shadow-lg transform hover:scale-105 transition-all text-white"
           >
             <Play size={20} fill="currentColor" /> Open New Stand
           </button>
@@ -1678,7 +1678,7 @@ export default function FructoseFury() {
     return (
       <div
         className={`h-screen bg-gray-950 text-white flex flex-col relative overflow-hidden transition-colors duration-100 ${
-          isBusted ? "animate-shake !bg-red-900" : ""
+          isBusted ? "animate-shake bg-red-900!" : ""
         }`}
       >
         <FloatingBackground />
@@ -1701,7 +1701,7 @@ export default function FructoseFury() {
         )}
 
         {/* Header */}
-        <div className="h-14 bg-gray-900/90 border-b border-gray-800 flex items-center justify-between px-4 z-[160] sticky top-0 backdrop-blur-md shrink-0">
+        <div className="h-14 bg-gray-900/90 border-b border-gray-800 flex items-center justify-between px-4 z-160 sticky top-0 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-2">
             <Banana className="text-yellow-500" size={20} />
             <span className="font-black uppercase tracking-tight text-lg hidden md:block">
@@ -1756,7 +1756,7 @@ export default function FructoseFury() {
         )}
 
         {showLogHistory && (
-          <div className="fixed top-16 right-4 w-64 max-h-60 bg-gray-900/95 border border-gray-700 rounded-xl z-[155] overflow-y-auto p-2 shadow-2xl">
+          <div className="fixed top-16 right-4 w-64 max-h-60 bg-gray-900/95 border border-gray-700 rounded-xl z-155 overflow-y-auto p-2 shadow-2xl">
             <div className="bg-gray-900 w-full max-w-md h-[70vh] rounded-2xl flex flex-col border border-gray-700">
               <div className="p-4 border-b border-gray-800 flex justify-between items-center">
                 <h3 className="font-bold">Log</h3>
@@ -1795,7 +1795,7 @@ export default function FructoseFury() {
 
         {/* Game Over Screen */}
         {gameState.status === "finished" && (
-          <div className="fixed inset-0 top-14 z-[150] bg-black/95 flex flex-col items-center justify-center p-6 text-center animate-in zoom-in overflow-y-auto">
+          <div className="fixed inset-0 top-14 z-150 bg-black/95 flex flex-col items-center justify-center p-6 text-center animate-in zoom-in overflow-y-auto">
             {/* Content same as original, just added overflow-y-auto to container */}
             <Trophy size={80} className="text-yellow-400 mb-6 animate-bounce" />
             <h1 className="text-5xl font-black text-white mb-2 uppercase">
