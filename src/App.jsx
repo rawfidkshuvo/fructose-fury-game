@@ -969,13 +969,15 @@ export default function FructoseFury() {
       table: [],
       bank: [],
     }));
+    // 2. Calculate Random Start Index
+    const randomStartIndex = Math.floor(Math.random() * players.length);
     await updateDoc(
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
       {
         status: "playing",
         players,
         deck,
-        turnIndex: 0,
+        turnIndex: randomStartIndex,
         turnPhase: "DRAWING",
         logs: [
           {
