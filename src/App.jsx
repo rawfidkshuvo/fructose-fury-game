@@ -727,6 +727,7 @@ export default function FructoseFury() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isMaintenance, setIsMaintenance] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   // Local UI States
   const [showGuide, setShowGuide] = useState(false);
@@ -970,17 +971,30 @@ export default function FructoseFury() {
   };
 
   const copyToClipboard = () => {
+    const textToCopy = gameState.roomId;
+
+    // Logic to show the popup and hide it after 2 seconds
+    const handleSuccess = () => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+
+      // Keep your existing global feedback if needed
+      if (triggerFeedback)
+        triggerFeedback("neutral", "COPIED!", "", CheckCircle);
+    };
+
     try {
-      navigator.clipboard.writeText(roomId);
-      triggerFeedback("neutral", "COPIED!", "", CheckCircle);
+      navigator.clipboard.writeText(textToCopy);
+      handleSuccess();
     } catch (e) {
+      // Fallback for older browsers
       const el = document.createElement("textarea");
-      el.value = roomId;
+      el.value = textToCopy;
       document.body.appendChild(el);
       el.select();
       document.execCommand("copy");
       document.body.removeChild(el);
-      triggerFeedback("neutral", "COPIED!", "", CheckCircle);
+      handleSuccess();
     }
   };
 
@@ -1575,13 +1589,26 @@ export default function FructoseFury() {
                 <div className="text-3xl font-mono text-white font-black tracking-widest">
                   {gameState.roomId}
                 </div>
-                <button
-                  onClick={copyToClipboard}
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
-                  title="Copy Room ID"
-                >
-                  <Copy size={16} />
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={copyToClipboard}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
+                  >
+                    {/* Optional: Change icon to checkmark when copied */}
+                    {isCopied ? (
+                      <CheckCircle size={16} className="text-green-500" />
+                    ) : (
+                      <Copy size={16} />
+                    )}
+                  </button>
+
+                  {/* 3. The Copied Popup */}
+                  {isCopied && (
+                    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-green-500 text-black text-xs font-bold px-2 py-1 rounded shadow-lg animate-fade-in-up whitespace-nowrap">
+                      Copied!
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <button
