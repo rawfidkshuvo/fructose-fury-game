@@ -48,6 +48,7 @@ import {
   Gem,
   Megaphone,
   ShieldCheck,
+  Copy,
 } from "lucide-react";
 
 // --- Firebase Config & Init ---
@@ -57,14 +58,15 @@ const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const APP_ID = typeof __app_id !== "undefined" ? __app_id : "fructose-fury-game";
+const APP_ID =
+  typeof __app_id !== "undefined" ? __app_id : "fructose-fury-game";
 const GAME_ID = "20"; // Assigned ID for Fructose Fury
 
 // --- Game Constants ---
@@ -262,8 +264,8 @@ const Card = ({ type, size = "md", animate = false }) => {
     size === "sm"
       ? "w-10 h-14 md:w-12 md:h-16 p-1"
       : size === "lg"
-      ? "w-32 h-48 p-4"
-      : "w-20 h-28 md:w-24 md:h-32 p-2";
+        ? "w-32 h-48 p-4"
+        : "w-20 h-28 md:w-24 md:h-32 p-2";
 
   const Icon = fruit.icon;
   return (
@@ -516,7 +518,6 @@ const GameSummaryModal = ({ players, destroyedCards, onClose }) => {
   return (
     <div className="fixed inset-0 z-250 bg-black/95 flex items-center justify-center p-4 animate-in fade-in zoom-in duration-300">
       <div className="bg-gray-900 border-2 border-yellow-600 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden relative">
-        
         {/* Header */}
         <div className="p-6 bg-gray-950 border-b border-gray-800 flex justify-between items-center shrink-0">
           <div>
@@ -527,7 +528,7 @@ const GameSummaryModal = ({ players, destroyedCards, onClose }) => {
               All cards collected and destroyed
             </p>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-full transition-colors"
           >
@@ -537,23 +538,29 @@ const GameSummaryModal = ({ players, destroyedCards, onClose }) => {
 
         {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
-          
           {/* 1. Destroyed Cards Section */}
           <div className="bg-red-950/30 rounded-2xl p-4 border border-red-900/50">
             <div className="flex items-center gap-2 mb-4 text-red-400">
               <Trash2 size={24} />
-              <h3 className="text-xl font-bold uppercase">Rotten Fruit (Destroyed)</h3>
+              <h3 className="text-xl font-bold uppercase">
+                Rotten Fruit (Destroyed)
+              </h3>
               <span className="bg-red-900/50 px-2 py-0.5 rounded text-xs text-red-200">
                 {destroyedCards?.length || 0} Cards
               </span>
             </div>
-            
-            {(!destroyedCards || destroyedCards.length === 0) ? (
-              <p className="text-gray-500 italic text-sm">No fruits were harmed in this game.</p>
+
+            {!destroyedCards || destroyedCards.length === 0 ? (
+              <p className="text-gray-500 italic text-sm">
+                No fruits were harmed in this game.
+              </p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {destroyedCards.sort().map((type, i) => (
-                  <div key={i} className="transform scale-75 origin-top-left -mr-4 -mb-4">
+                  <div
+                    key={i}
+                    className="transform scale-75 origin-top-left -mr-4 -mb-4"
+                  >
                     <Card type={type} size="sm" />
                   </div>
                 ))}
@@ -563,8 +570,11 @@ const GameSummaryModal = ({ players, destroyedCards, onClose }) => {
 
           {/* 2. Player Collections Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {players.map(p => (
-              <div key={p.id} className="bg-gray-800/50 rounded-2xl p-4 border border-gray-700">
+            {players.map((p) => (
+              <div
+                key={p.id}
+                className="bg-gray-800/50 rounded-2xl p-4 border border-gray-700"
+              >
                 <div className="flex justify-between items-center mb-3">
                   <span className="font-bold text-yellow-500 text-lg flex items-center gap-2">
                     <User size={18} /> {p.name}
@@ -573,34 +583,37 @@ const GameSummaryModal = ({ players, destroyedCards, onClose }) => {
                     Score: {calculateScore(p.bank)}
                   </span>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-1 min-h-[60px] content-start bg-black/20 p-2 rounded-xl">
                   {p.bank && p.bank.length > 0 ? (
                     p.bank.sort().map((type, i) => (
-                      <div key={i} className="transform scale-75 origin-top-left -mr-3 -mb-3">
-                         <Card type={type} size="sm" />
+                      <div
+                        key={i}
+                        className="transform scale-75 origin-top-left -mr-3 -mb-3"
+                      >
+                        <Card type={type} size="sm" />
                       </div>
                     ))
                   ) : (
-                    <span className="text-gray-600 text-xs italic w-full text-center py-2">Empty Basket</span>
+                    <span className="text-gray-600 text-xs italic w-full text-center py-2">
+                      Empty Basket
+                    </span>
                   )}
                 </div>
               </div>
             ))}
           </div>
-
         </div>
 
         {/* Footer */}
         <div className="p-4 bg-gray-950 border-t border-gray-800 shrink-0 flex justify-center">
-            <button 
-                onClick={onClose}
-                className="bg-yellow-600 hover:bg-yellow-500 text-black font-black text-xl py-3 px-12 rounded-xl shadow-lg hover:scale-105 transition-transform"
-            >
-                SEE WINNER
-            </button>
+          <button
+            onClick={onClose}
+            className="bg-yellow-600 hover:bg-yellow-500 text-black font-black text-xl py-3 px-12 rounded-xl shadow-lg hover:scale-105 transition-transform"
+          >
+            SEE WINNER
+          </button>
         </div>
-
       </div>
     </div>
   );
@@ -707,7 +720,7 @@ const GameGuideModal = ({ onClose }) => (
 export default function FructoseFury() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState("menu");
-  
+
   const [roomId, setRoomId] = useState("");
   const [roomCodeInput, setRoomCodeInput] = useState("");
   const [gameState, setGameState] = useState(null);
@@ -728,13 +741,13 @@ export default function FructoseFury() {
 
   //read and fill global name
   const [playerName, setPlayerName] = useState(
-    () => localStorage.getItem("gameHub_playerName") || ""
+    () => localStorage.getItem("gameHub_playerName") || "",
   );
   //set global name for all game
   useEffect(() => {
     if (playerName) localStorage.setItem("gameHub_playerName", playerName);
   }, [playerName]);
-  
+
   // Ref to track last processed event to avoid useEffect loop
   const lastProcessedEventId = useRef(null);
 
@@ -746,8 +759,6 @@ export default function FructoseFury() {
       setRoomId(savedRoomId);
     }
   }, []);
-
-  
 
   //game summary modal trigger
   useEffect(() => {
@@ -861,7 +872,7 @@ export default function FructoseFury() {
           setError("The Fruit Stand has closed (Host left).");
           localStorage.removeItem("fructose_room_id");
         }
-      }
+      },
     );
     return () => unsub();
   }, [roomId, user]);
@@ -901,7 +912,7 @@ export default function FructoseFury() {
 
     await setDoc(
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", newId),
-      initialData
+      initialData,
     );
     setRoomId(newId);
     setRoomCodeInput(newId);
@@ -919,7 +930,7 @@ export default function FructoseFury() {
       "public",
       "data",
       "rooms",
-      roomCodeInput
+      roomCodeInput,
     );
     const snap = await getDoc(ref);
 
@@ -958,6 +969,21 @@ export default function FructoseFury() {
     setLoading(false);
   };
 
+  const copyToClipboard = () => {
+    try {
+      navigator.clipboard.writeText(roomId);
+      triggerFeedback("neutral", "COPIED!", "", CheckCircle);
+    } catch (e) {
+      const el = document.createElement("textarea");
+      el.value = roomId;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      triggerFeedback("neutral", "COPIED!", "", CheckCircle);
+    }
+  };
+
   const startGame = async () => {
     if (gameState.hostId !== user.uid) return;
     const deck = shuffle([...DECK_TEMPLATE]);
@@ -989,7 +1015,7 @@ export default function FructoseFury() {
         destroyedCards: [], // <--- RESET THIS
         drawnCard: null,
         lastEvent: null,
-      }
+      },
     );
   };
 
@@ -1011,7 +1037,7 @@ export default function FructoseFury() {
         logs: [],
         turnIndex: 0,
         destroyedCards: [], // <--- RESET THIS
-      }
+      },
     );
     setShowLeaveConfirm(false);
   };
@@ -1034,7 +1060,7 @@ export default function FructoseFury() {
       } else {
         // 1. Calculate the new player list
         const leavingPlayerIndex = gameState.players.findIndex(
-          (p) => p.id === user.uid
+          (p) => p.id === user.uid,
         );
         const newPlayers = gameState.players.filter((p) => p.id !== user.uid);
 
@@ -1098,7 +1124,7 @@ export default function FructoseFury() {
     currentPlayers,
     currentDeck,
     logs = [],
-    event = null
+    event = null,
   ) => {
     let nextIdx = (gameState.turnIndex + 1) % currentPlayers.length;
     // Auto-Bank for the NEXT player (Move Table -> Bank)
@@ -1139,7 +1165,7 @@ export default function FructoseFury() {
         stealTargetIds: [],
         lastEvent: event || bankEvent || null,
         logs: arrayUnion(...logs),
-      }
+      },
     );
   };
 
@@ -1199,7 +1225,7 @@ export default function FructoseFury() {
 
       // CASE A: Deck is empty AND player busted (Game Over)
       if (deck.length === 0) {
-        me.hand = []; 
+        me.hand = [];
         const finalPlayers = finalizePlayers(players);
 
         await updateDoc(
@@ -1215,24 +1241,24 @@ export default function FructoseFury() {
               type: "neutral",
             }),
             drawnCard: cardType,
-            turnPhase: "BUSTED", 
-          }
+            turnPhase: "BUSTED",
+          },
         );
-        return; 
+        return;
       }
-      
+
       // CASE B: Standard Bust (Game Continues)
       await updateDoc(
         doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
         {
-          players, 
+          players,
           deck,
           lastEvent: event,
           destroyedCards: updatedDestroyedCards, // Save the full list
           logs: arrayUnion(...logs),
           drawnCard: cardType,
           turnPhase: "BUSTED",
-        }
+        },
       );
 
       // Prepare wiped hand for the actual next turn state
@@ -1260,7 +1286,7 @@ export default function FructoseFury() {
           drawnCard: cardType,
           turnPhase: "STEALING",
           stealTargetIds: stealTargetIds,
-        }
+        },
       );
     } else {
       // Priority 3: Safe Draw (No Steal, No Bust)
@@ -1280,7 +1306,7 @@ export default function FructoseFury() {
               text: "Deck Empty! Game Over!",
               type: "neutral",
             }),
-          }
+          },
         );
       } else {
         // Game Continues
@@ -1289,7 +1315,7 @@ export default function FructoseFury() {
           {
             players,
             deck,
-          }
+          },
         );
       }
     }
@@ -1360,7 +1386,7 @@ export default function FructoseFury() {
             text: "Deck Empty! Game Over!",
             type: "neutral",
           }),
-        }
+        },
       );
     } else {
       // Continue Game
@@ -1373,7 +1399,7 @@ export default function FructoseFury() {
           drawnCard: null,
           lastEvent: event,
           logs: arrayUnion(...logs),
-        }
+        },
       );
     }
   };
@@ -1402,7 +1428,7 @@ export default function FructoseFury() {
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
       {
         players,
-      }
+      },
     );
   };
 
@@ -1412,7 +1438,7 @@ export default function FructoseFury() {
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
       {
         players,
-      }
+      },
     );
   };
 
@@ -1544,8 +1570,18 @@ export default function FructoseFury() {
               <h2 className="text-xl text-yellow-500 font-bold uppercase tracking-wider">
                 Fruit Stand
               </h2>
-              <div className="text-3xl font-mono text-white font-black tracking-widest">
-                {gameState.roomId}
+              {/* Grouping Title and Copy Button together on the left */}
+              <div className="flex items-center gap-2">
+                <div className="text-3xl font-mono text-white font-black tracking-widest">
+                  {gameState.roomId}
+                </div>
+                <button
+                  onClick={copyToClipboard}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
+                  title="Copy Room ID"
+                >
+                  <Copy size={16} />
+                </button>
               </div>
             </div>
             <button
@@ -1669,12 +1705,12 @@ export default function FructoseFury() {
     let winner = null;
     if (gameState.status === "finished") {
       winner = [...gameState.players].sort(
-        (a, b) => calculateScore(b.bank) - calculateScore(a.bank)
+        (a, b) => calculateScore(b.bank) - calculateScore(a.bank),
       )[0];
     }
 
     const allPlayersReady = gameState.players.every(
-      (p) => p.id === gameState.hostId || p.ready
+      (p) => p.id === gameState.hostId || p.ready,
     );
 
     return (
@@ -1774,8 +1810,8 @@ export default function FructoseFury() {
                       l.type === "danger"
                         ? "border-red-500 bg-red-900/20"
                         : l.type === "warning"
-                        ? "border-orange-500 bg-orange-900/20"
-                        : "border-gray-500 bg-gray-800"
+                          ? "border-orange-500 bg-orange-900/20"
+                          : "border-gray-500 bg-gray-800"
                     }`}
                   >
                     {l.text}
@@ -1788,10 +1824,10 @@ export default function FructoseFury() {
 
         {/* NEW: Game Summary Modal */}
         {showSummary && (
-          <GameSummaryModal 
-            players={gameState.players} 
-            destroyedCards={gameState.destroyedCards || []} 
-            onClose={() => setShowSummary(false)} 
+          <GameSummaryModal
+            players={gameState.players}
+            destroyedCards={gameState.destroyedCards || []}
+            onClose={() => setShowSummary(false)}
           />
         )}
 
